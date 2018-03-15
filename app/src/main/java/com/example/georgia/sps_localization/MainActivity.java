@@ -60,4 +60,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    //Method that gets called when i click Bayes button
+    public void GoToParticle(View view){
+        Intent intent =new Intent(this,ParticleFilter.class);
+        startActivity(intent);
+    }
 }

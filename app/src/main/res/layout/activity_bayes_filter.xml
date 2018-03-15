@@ -30,6 +30,7 @@
         android:layout_marginBottom="22dp"
         android:layout_marginEnd="210dp"
         android:layout_marginRight="210dp"
+        android:onClick="LocateMe"
         android:text="@string/locate"
         tools:layout_editor_absoluteX="221dp"
         tools:layout_editor_absoluteY="212dp" />
