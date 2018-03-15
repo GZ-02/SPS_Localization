@@ -14,13 +14,13 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     private static final String DATABASE_NAME="LocalizationApp.db";
     public int i,j;
 
-    //Table Cell 1
+    //Columns for the tables AccessPoints
     private static final String TABLE_NAME="AccessPoint";
     private static final String COLUMN_ID="_id";
     private static final String COLUMN_TIMESTAMP="timestamp";
     private static final String COLUMN_RSSI="rssi";
 
-    private String TAG="com.example.georgia.collectdatabayes";
+    private String TAG="com.example.georgia.sps_localization";
 
 
     //Constructor
