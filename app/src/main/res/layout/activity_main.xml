@@ -7,7 +7,7 @@
     tools:context="com.example.georgia.sps_localization.MainActivity">
 
     <Button
-        android:id="@+id/button"
+        android:id="@+id/BayesButton"
         android:layout_width="150dp"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
@@ -16,14 +16,15 @@
         android:layout_marginBottom="78dp"
         android:layout_marginLeft="96dp"
         android:layout_marginStart="96dp"
+        android:onClick="GoToBayes"
         android:text="@string/Bayes" />
 
     <Button
-        android:id="@+id/button2"
+        android:id="@+id/ParticleButton"
         android:layout_width="150dp"
         android:layout_height="wrap_content"
-        android:layout_alignBaseline="@+id/button"
-        android:layout_alignBottom="@+id/button"
+        android:layout_alignBaseline="@+id/BayesButton"
+        android:layout_alignBottom="@+id/BayesButton"
         android:layout_alignParentEnd="true"
         android:layout_alignParentRight="true"
         android:layout_marginEnd="88dp"
@@ -34,9 +35,10 @@
         android:id="@+id/Title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
         android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="27dp"
+        android:layout_marginTop="13dp"
         android:gravity="center"
         android:text="@string/title"
         android:textSize="20sp" />

@@ -1,8 +1,11 @@
 package com.example.georgia.sps_localization;
 
+import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.view.WindowManager;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -23,11 +26,14 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        //Line to keep screen on permanently
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
         //Create database handler
         myDbHandler=new DatabaseHandler(this,null,null,1);
 
-        String query ="CREATE TABLE "+ TABLE_NAME + "(" + COLUMN_ID +
-                " INTEGER PRIMARY KEY AUTOINCREMENT," /*+ COLUMN_TIMESTAMP + " TEXT NULL,"*/;
+    /*    String query ="CREATE TABLE "+ TABLE_NAME + "(" + COLUMN_ID +
+                " INTEGER PRIMARY KEY AUTOINCREMENT," + COLUMN_TIMESTAMP + " TEXT NULL,";
 
         for(i=0;i<=255;i++){
             String query1;
@@ -41,5 +47,17 @@ public class MainActivity extends AppCompatActivity {
         }
         query=query + ");";
         Log.i(TAG,query);
+        */
+
+
+
     }
+
+    //Method that gets called when i click Bayes button
+    public void GoToBayes(View view){
+        Intent intent =new Intent(this,BayesFilter.class);
+        startActivity(intent);
+    }
+
+
 }
