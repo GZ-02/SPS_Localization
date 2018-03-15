@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">SPS_Localization</string>
+    <string name="title"> Indoor Localization </string>
+    <string name="Bayes">Bayesian Filters </string>
+    <string name="Particle">Particle Filters</string>
+    <string name="locate">Locate Me</string>
 </resources>
