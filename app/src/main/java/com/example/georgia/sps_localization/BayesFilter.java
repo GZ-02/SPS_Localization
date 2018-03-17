@@ -14,7 +14,6 @@ public class BayesFilter extends AppCompatActivity {
 
         //Line to keep screen on permanently
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
     }
 
     public void LocateMe(View view){

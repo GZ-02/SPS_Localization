@@ -5,6 +5,6 @@
     <string name="Particle">Particle Filters</string>
     <string name="locate">Locate Me</string>
     <string name="cell">Cell Number: </string>
-    <string name="possibility">Possibility:</string>
-    <string name="cell_number">Cell Number:</string>
+    <string name="possibility">Probability: </string>
+    <string name="cell_number">Cell Number: </string>
 </resources>
