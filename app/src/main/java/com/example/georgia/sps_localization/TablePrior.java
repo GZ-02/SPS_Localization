@@ -1,8 +1,5 @@
 package com.example.georgia.sps_localization;
 
-/**
- * Created by Georgia on 17-Mar-18.
- */
 
 public class TablePrior {
     String probability;
@@ -23,7 +20,6 @@ public class TablePrior {
     }
 
     public String getProbability() {
-
         return probability;
     }
 

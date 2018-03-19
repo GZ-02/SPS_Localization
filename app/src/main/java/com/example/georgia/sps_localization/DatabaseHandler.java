@@ -15,12 +15,14 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 
     //Columns for the table Prior
     private static final String TABLE_NAME="Prior";
-    private static final String TABLE_NAME2="FunctionForAP";
+    private String TABLE_NAME2="FunctionForAP";
+    private static final String TABLE_NAME3="AccessPoints";
     private static final String COLUMN_ID="_id";
     private static final String COLUMN_PROBABILITY="probability";
+    private static final String COLUMN_ACCESS="SSID";
 
     //Columns for table CellFunction
-    private static final String COLUMN_CELLNUMBER="cell";
+    private static final String COLUMN_RSSVALUE="RssValue";
 
     private String TAG="com.example.georgia.sps_localization";
 
@@ -32,15 +34,31 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     //Override methods
     @Override
     public void onCreate(SQLiteDatabase db) {
+
+        // Query for Prior table
         String query ="CREATE TABLE " + TABLE_NAME + "(" + COLUMN_ID +
-                " INTEGER PRIMARY KEY AUTOINCREMENT," + COLUMN_PROBABILITY + " TEXT NULL " + ");";
+                " INTEGER PRIMARY KEY AUTOINCREMENT," + COLUMN_PROBABILITY + " TEXT NULL" + ");";
+
         Log.i(TAG,query);
         db.execSQL(query);
 
+
+        //Query for  63 FunctionForAp tables
+        //Rssi values range from -33 to -92
         String query2="CREATE TABLE " + TABLE_NAME2;
-        for (i=1; i<=19;i++){
+        for (i=1; i<=43;i++){
             query2=query2 + Integer.toString(i);
-            query2=query2 + COLUMN_ID +" INTEGER PRIMARY KEY AUTOINCREMENT," + ");";
+            query2=query2 + COLUMN_ID +" INTEGER PRIMARY KEY AUTOINCREMENT," + COLUMN_ACCESS + " TEXT NULL,";
+            for (j=1;j<=59;j++){
+                if(j!=59){
+                    query2+=COLUMN_RSSVALUE + Integer.toString(j) + " TEXT NULL,";
+                }
+                if (j==59){
+                    query2+= COLUMN_RSSVALUE + Integer.toString(j) + " TEXT NULL" +");";
+                }
+            }
+            Log.i(TAG,query2);
+            db.execSQL(query2);
         }
     }
 
@@ -74,15 +92,15 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 
 
     //Add a new row to the table Prior
-    public void addRow2(CellFunctionTable cft){
+    public void addRow2(CellFunctionTable cft,int i){
+        TABLE_NAME2+=Integer.toString(i);
         SQLiteDatabase db=this.getWritableDatabase();
         // Use ContentValues to add a row in the table
         ContentValues values = new ContentValues();
 
         //Add values for each column
         values.put(COLUMN_PROBABILITY,cft.getCell_name());
-
-        long g=db.insert(TABLE_NAME, null, values);
+        long g=db.insert(TABLE_NAME2, null, values);
         Log.i(TAG,String.valueOf(g));
         if(g!=-1){
             Log.i(TAG,"Row added");
@@ -92,6 +110,8 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         }
         db.close();
     }
+
+
 
     //Delete all rows from table Prior
     public void deleteAll1(){
