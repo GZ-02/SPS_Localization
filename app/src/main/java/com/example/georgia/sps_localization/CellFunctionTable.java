@@ -1,14 +1,15 @@
 package com.example.georgia.sps_localization;
 
+/********************************Table where we save info needed for the prediction, mean and standard deviations********************************/
 
 public class CellFunctionTable {
-
     int id;
     String cell_name,mean,sd;
 
-//Create constructors
+    /*******************************************Constructors********************************/
     public void CellFunctionTable(){}
 
+    /*****************************************Setter and Getter methods**********************************/
     // Getter methods
     public int getId() {
         return id;
@@ -25,6 +26,7 @@ public class CellFunctionTable {
     public String getSd() {
         return sd;
     }
+
 
     //Setter Methods
     public void setId(int id) {

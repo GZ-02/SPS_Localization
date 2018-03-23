@@ -1,20 +1,19 @@
 package com.example.georgia.sps_localization;
 
-
+/********************************Table where we save prior probabilities per access point********************************/
 public class TablePrior {
     String probability;
     int id;
 
-    //Constructors
+    /*******************************************Constructors********************************/
     public TablePrior(String prob){
         probability=prob;
     }
 
-    public TablePrior(){
+    public TablePrior(){}
 
-    }
-
-    //Setter and Getter methods
+    /*****************************************Setter and Getter methods**********************************/
+    //Getter methods
     public int getId() {
         return id;
     }
@@ -23,6 +22,9 @@ public class TablePrior {
         return probability;
     }
 
+
+
+    //Setter Methods
     public void setProbability(String probability) {
         this.probability = probability;
     }
@@ -30,4 +32,5 @@ public class TablePrior {
     public void setId(int id) {
         this.id = id;
     }
+
 }

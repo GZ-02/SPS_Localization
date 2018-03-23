@@ -8,12 +8,12 @@ import android.view.WindowManager;
 
 public class MainActivity extends AppCompatActivity {
 
-    //Declare variables
+    /********************************************Declaring Variables***************************************************/
     DatabaseHandler myDbHandler;
-
     private String TAG="com.example.georgia.sps_localization";
     public int i,j;
 
+    /*************************************Function that creates the Main activity************************************/
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -26,14 +26,15 @@ public class MainActivity extends AppCompatActivity {
         myDbHandler=new DatabaseHandler(this,null,null,1);
     }
 
-    //Method that gets called when i click Bayes button
+
+    /******************************Method that gets called when i click Bayes button*********************/
     public void GoToBayes(View view){
         Intent intent =new Intent(this,BayesFilter.class);
         startActivity(intent);
     }
 
 
-    //Method that gets called when i click Bayes button
+    /******************************Method that gets called when i click Particle button*********************/
     public void GoToParticle(View view){
         Intent intent =new Intent(this,ParticleFilter.class);
         startActivity(intent);
