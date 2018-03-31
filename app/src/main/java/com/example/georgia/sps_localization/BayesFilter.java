@@ -9,6 +9,8 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -21,10 +23,14 @@ public class BayesFilter extends AppCompatActivity {
     //Declaring TAG
     public String TAG="com.example.georgia.sps_localization";
 
+    String sid;
+
     String cell,mac,mean,sd,PreviousMac,RSSID,RSSI,subRSSID,previousMac="0";
-    int index,myIndex,k=1,i=0;
+    int index,myIndex,k=1,i=0,j=0,counter=0;
+    double pr;
     private WifiManager wifiManager;
     List<ScanResult> scanResults;
+    TextView txt1,txt2;
     //String table that contains gaussian results
     String[] ResultingProb=new String[19];
     //Database Handler and tables needed to add values to tables
@@ -33,6 +39,10 @@ public class BayesFilter extends AppCompatActivity {
     CellFunctionTable accessPoints;
     ApListTable ApList;
     ProbAPTable results;
+    double[] FinalPosterior={0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
+    double maxValue=0.0,sum=0.0;
+    int cellNumber=0;
+    boolean exitLoop=false,accessed=false;
 
     //String Table to save the 4 items found in each row of the file
     String[] words;
@@ -58,6 +68,8 @@ public class BayesFilter extends AppCompatActivity {
         ApList=new ApListTable();
         accessPoints=new CellFunctionTable();
         results=new ProbAPTable();
+        txt1=(TextView)findViewById(R.id.cellNumber);
+        txt2=(TextView)findViewById(R.id.possibility);
 
         // If activity was already visited
         if(!alreadyVisited){
@@ -67,7 +79,6 @@ public class BayesFilter extends AppCompatActivity {
                 myDb.addRow(prior);
             }
 
-            Log.i(TAG,"Print prior table."+"\n" + myDb.DatabaseToString1());
             readFile();
             RowsLeft[42]=k;
             for(i=1;i<=43;i++) {
@@ -81,18 +92,29 @@ public class BayesFilter extends AppCompatActivity {
                     }
                 }
             }
+            for(i=1;i<=43;i++){
+                results.setProbability("0");
+                for(j=1;j<=19;j++){
+                    myDb.addRow3(results,i);
+                }
+            }
             SharedPreferences.Editor editor = getPreferences(MODE_PRIVATE).edit();
             editor.putBoolean("called",true);
             editor.commit();
         }
         else{
-            Log.i(TAG,"Already created prior.");
+            Log.i(TAG,"Already created prior. Now update");
+            for (index=1;index<=19;index++) {
+                myDb.update1(index,String.valueOf(1.0/19.0));
+            }
         }
 
+        Log.i(TAG,"Print prior table."+"\n" + myDb.DatabaseToString1());
+
         for(i=1;i<=43;i++) {
-            Log.i(TAG, myDb.DatabaseToString2(i));
+            Log.i(TAG,"FunctionForAP"+ String.valueOf(i)+" " +myDb.DatabaseToString2(i));
         }
-        Log.i(TAG,myDb.DatabaseToString4());
+        Log.i(TAG,"AccessPoints List:"+ myDb.DatabaseToString4());
     }
 
 
@@ -154,8 +176,50 @@ public class BayesFilter extends AppCompatActivity {
     }
 
 
- /*************************************Function that gets called when button is pushed**************************************/
-    public void LocateMe(View view){
+ /*************************************Functions that gets called when button Initial Belief is pushed**************************************/
+ public void LocateMe(View view){
+     Log.i(TAG,"Button clicked");
+     Runnable r=new Runnable(){
+         @Override
+         public void run(){
+             long present=System.currentTimeMillis();
+             long future=present+3*60*1000;
+             long check=present+10000;
+             //Start loop that repeats itself every 10 seconds
+             while(System.currentTimeMillis()<future){
+                 if(System.currentTimeMillis()==check){
+                     check+=10000;
+                     Log.i(TAG,"10 seconds passed");
+                     ScanForAP();
+                 }
+                 if(exitLoop){break;}
+             }
+             Log.i(TAG,"Exited Loop");
+             if(!accessed){
+                 try {
+                     runOnUiThread(new Runnable() {
+                         public void run() {
+                             Toast.makeText(getBaseContext(),"You might be in the wrong building",Toast.LENGTH_LONG).show();
+                         }
+                     });
+                 }
+                 catch (Throwable t)
+                 {
+                     runOnUiThread(new Runnable() {
+                         public void run() {
+                             Toast.makeText(getBaseContext(),"URL exeption!",Toast.LENGTH_SHORT).show();
+                         }
+                     });
+                 }
+             }
+         }
+     };
+     Thread myThread= new Thread(r);
+     myThread.start();
+
+ }
+
+    public void ScanForAP(){
         // Set wifi manager.
         wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         // Start a wifi scan.
@@ -167,16 +231,15 @@ public class BayesFilter extends AppCompatActivity {
         for (ScanResult scanResult : scanResults) {
             RSSID=scanResult.BSSID;
             RSSI=Integer.toString(scanResult.level);
-            subRSSID=RSSID.substring(0,RSSID.length()-2);
-
+            subRSSID=RSSID.substring(0,RSSID.length()-3);
             //Perform gaussian formula
             Log.i(TAG,subRSSID+" "+RSSI);
             if( (myDb.ReturnIndex(subRSSID)!=0) && !(subRSSID.equals(previousMac)) ){
                 Log.i(TAG,"Found matching access point");
+                accessed=true;
                 previousMac=subRSSID;
                 ResultingProb=myDb.PerformGauss(myDb.ReturnIndex(subRSSID),Double.parseDouble(RSSI));
                 for(i=1;i<=19;i++){
-                    //DO I NEED 43 TABLES FOR PRIOR ?????
                     results.setProbability(ResultingProb[i-1]);
                     myDb.addRow3(results,myDb.ReturnIndex(subRSSID));
                 }
@@ -185,7 +248,50 @@ public class BayesFilter extends AppCompatActivity {
                 Log.i(TAG,"No match");
             }
         }
+        for(i=1;i<=43;i++) {
+            Log.i(TAG," ProbabilityPerAP"+String.valueOf(i) + " " + myDb.DatabaseToString3(i));
+        }
+        if(accessed){
+            //Calculate Average of all Probabilities gathered
+            for(i=1;i<=19;i++){
+                for(j=1;j<=43;j++){
+                    pr=Double.parseDouble(myDb.returnProb(j,i));
+                    if(myDb.returnProb(j,i)!="0"){
+                        counter++;
+                    }
+                    FinalPosterior[i-1]+=pr;
+                }
+                FinalPosterior[i-1]=FinalPosterior[i-1]/counter;
+                sum+=FinalPosterior[i-1];
+                if(maxValue<FinalPosterior[i-1]){
+                    maxValue=FinalPosterior[i-1];
+                    cellNumber=i;
+                }
+                counter=0;
+                Log.i(TAG,"AvgProb = " + String.valueOf(FinalPosterior[i-1]));
+            }
+            Log.i(TAG,"Prob= "+String.valueOf(maxValue)+" Cell= "+String.valueOf(cellNumber)+" sum= "+String.valueOf(sum));
+            double p=Double.parseDouble(myDb.returnPriorProb(cellNumber));
+            maxValue=maxValue/sum;
+            String str1=String.format("%.2f",p);
+            String str2=String.format("%.2f",maxValue);
+            Log.i(TAG,str1+" "+str2+" "+String.valueOf(p));
+            if(str1.equals(str2)){
+                exitLoop=true;
+                txt1.setText("Cell Number: "+ String.valueOf(cellNumber));
+                txt2.setText("Probability: " +String.format("%.2f",sum*1000));//Not sure about multiplication
+            }
+            for(i=1;i<=19;i++){
+                if(FinalPosterior[i-1]==0){
+                    myDb.update1(i,String.valueOf(0.0000001));
+                }
+                else{
+                    myDb.update1(i,String.valueOf(FinalPosterior[i-1]/sum));
+                }
+            }
+        }
     }
+
 
 
 

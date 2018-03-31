@@ -108,6 +108,43 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     }
 
 
+    //Method that updates a specific row from one of the ProbAPTables
+    public void update1(int index,String newPr){
+        SQLiteDatabase db=this.getWritableDatabase();
+        // Use ContentValues to add a row in the table
+        ContentValues values = new ContentValues();
+        //Add values for each column
+        values.put(COLUMN_PROBABILITY,newPr);
+        long g=db.update(TABLE_NAME,values,"_id="+String.valueOf(index),null);
+        if(g!=-1){
+            Log.i(TAG,"Row updated");
+        }
+        else{
+            Log.i(TAG,"Row not updated");
+        }
+        db.close();
+    }
+
+
+    //Method that returns the probability for specific cell and access point
+    public String returnPriorProb(int r){
+        String probability="-1";
+        SQLiteDatabase db = getReadableDatabase();
+        String query = "SELECT probability FROM " + TABLE_NAME+" WHERE _id="+String.valueOf(r);
+        Cursor c = db.rawQuery(query, null);
+        if(c.moveToFirst()){
+            //  Log.i(TAG,"Nothing wrong");
+        }
+        else{
+            Log.i(TAG,"Something wrong");
+            return probability;
+        }
+        probability=c.getString(c.getColumnIndex(COLUMN_PROBABILITY));
+        c.close();
+        return probability;
+    }
+
+
     //Add a new row to the tables CellFunction
     public void addRow2(CellFunctionTable cft,int i){
         TABLE_NAME2+=Integer.toString(i);
@@ -152,6 +189,45 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         }
         db.close();
         TABLE_NAME3="ProbabilityPerAccessPoint";
+    }
+
+    //Method that updates a specific row from one of the ProbAPTables
+    public void update3(ProbAPTable pt,int index,int r){
+        TABLE_NAME3+=Integer.toString(index);
+        Log.i(TAG,TABLE_NAME3);
+        SQLiteDatabase db=this.getWritableDatabase();
+        // Use ContentValues to add a row in the table
+        ContentValues values = new ContentValues();
+        //Add values for each column
+        values.put(COLUMN_PROBABILITY,pt.getProbability());
+        long g=db.update(TABLE_NAME3,values,"_id="+String.valueOf(r),null);
+        if(g!=-1){
+            Log.i(TAG,"Row updated");
+        }
+        else{
+            Log.i(TAG,"Row not updated");
+        }
+        db.close();
+        TABLE_NAME3="ProbabilityPerAccessPoint";
+    }
+
+    //Method that returns the probability for specific cell and access point
+    public String returnProb(int index,int r){
+        String probability="-1";
+
+        SQLiteDatabase db = getReadableDatabase();
+        String query = "SELECT probability FROM " + TABLE_NAME3+String.valueOf(index)+" WHERE _id="+String.valueOf(r);
+        Cursor c = db.rawQuery(query, null);
+        if(c.moveToFirst()){
+          //  Log.i(TAG,"Nothing wrong");
+        }
+        else{
+            Log.i(TAG,"Something wrong");
+            return probability;
+        }
+        probability=c.getString(c.getColumnIndex(COLUMN_PROBABILITY));
+        c.close();
+        return probability;
     }
 
 
@@ -249,6 +325,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         }
         else{
             dbString="No records in the table!";
+            TABLE_NAME2="FunctionForAP";
             return dbString;
         }
 
@@ -285,6 +362,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         }
         else{
             dbString="No records in the table!";
+            TABLE_NAME3="ProbabilityPerAccessPoint";
             return dbString;
         }
 
@@ -296,6 +374,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
             dbString+="\n";
         }while(c.moveToNext());
         c.close();
+        TABLE_NAME3="ProbabilityPerAccessPoint";
         return dbString;
     }
 
@@ -387,6 +466,9 @@ public class DatabaseHandler extends SQLiteOpenHelper {
                 power=-(Math.pow(x-mean,2))/(2*Math.pow(sd,2));
                 g=(1.0/(sd*sqr))*Math.pow(2.72,power);
                 results[sa-1]=String.valueOf(g);
+            }
+            else{
+                results[sa-1]="0";
             }
 
         }while(c.moveToNext());

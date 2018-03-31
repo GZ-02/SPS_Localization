@@ -3,8 +3,8 @@
     <string name="title"> Indoor Localization </string>
     <string name="Bayes">Bayesian Filters </string>
     <string name="Particle">Particle Filters</string>
-    <string name="locate">Locate Me</string>
     <string name="cell">Cell Number: </string>
     <string name="possibility">Probability: </string>
     <string name="cell_number">Cell Number: </string>
+    <string name="locate">Locate me</string>
 </resources>
