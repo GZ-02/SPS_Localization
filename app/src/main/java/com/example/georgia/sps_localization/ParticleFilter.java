@@ -34,8 +34,8 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
     public boolean exitLoop=false;
 
     //WIL REMOVE
-  //  TextView txt_compass,txtSteps;
-  //  ImageView compass_img;
+    TextView txt_compass,txtSteps;
+    ImageView compass_img;
 
     /*****************************************Function that creates the Particle activity*********************************************/
     @Override
@@ -61,9 +61,9 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
         simpleStepDetector.registerListener(this);
 
         /*********************************WILL REMOVE, ADDED FOR TESTING PURPOSES****************************/
-  //      compass_img = (ImageView) findViewById(R.id.img_compass);
-  //      txt_compass = (TextView) findViewById(R.id.txt_azimuth);
-  //      txtSteps=(TextView) findViewById(R.id.steps);
+        compass_img = (ImageView) findViewById(R.id.img_compass);
+        txt_compass = (TextView) findViewById(R.id.txt_azimuth);
+        txtSteps=(TextView) findViewById(R.id.steps);
         /*************************************************************************************************/
 
         //Register Listeners
@@ -107,9 +107,9 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
     @Override
     public void step(long timeNs) {
         NumberOfSteps++;
-       // txtSteps.setText("Steps: "+NumberOfSteps);
+        txtSteps.setText("Steps: "+NumberOfSteps);
         distanceTraveled=NumberOfSteps*distancePerStep;
-      //  txt_compass.setText(azimuth + "° " + direction);
+        txt_compass.setText(azimuth + "° " + direction);
         Log.i(TAG,"Steps: "+String.valueOf(NumberOfSteps)+", Distance: "+String.valueOf(distanceTraveled)+" "+String.valueOf(azimuth)+", Direction: "+String.valueOf(direction));
 
     }
@@ -165,19 +165,19 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
                     azimuth = (int) (Math.toDegrees(SensorManager.getOrientation(rMat, orientation)[0]) + 360) % 360;
                 }
                 azimuth=Math.round(azimuth);
-             //   compass_img.setRotation(-azimuth);
+                compass_img.setRotation(-azimuth);
                 direction=" " ;
 
                 if (azimuth >= 320 && azimuth <= 360)
-                    direction = "E";
-                if (azimuth >=0  && azimuth <= 40)
-                    direction = "E";
-                if (azimuth >= 230 && azimuth <=310)
                     direction = "N";
-                if (azimuth >= 140 && azimuth <= 220)
+                if (azimuth >=0  && azimuth <= 40)
+                    direction = "N";
+                if (azimuth >= 230 && azimuth <=310)
                     direction = "W";
-                if (azimuth >= 50 && azimuth <=130)
+                if (azimuth >= 140 && azimuth <= 220)
                     direction = "S";
+                if (azimuth >= 50 && azimuth <=130)
+                    direction = "E";
 
            //     Log.i(TAG,direction+ " "+String.valueOf(azimuth));
             }
