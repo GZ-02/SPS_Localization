@@ -4,17 +4,36 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background=" #3399ff"
+    android:background="#3399ff"
     tools:context="com.example.georgia.sps_localization.ParticleFilter">
 
-    <ImageView
-        android:id="@+id/FloorPlan"
+    <TextView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:textAlignment="center"
+        android:textSize="40sp"
+        android:textColor="#000"
+        android:textStyle="bold"
+        android:text="0°"
+        android:id="@+id/txt_azimuth"/>
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:src="@drawable/compass"
+        android:layout_below="@+id/txt_azimuth"
+        android:id="@+id/img_compass"/>
+
+    <TextView
+        android:id="@+id/steps"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
         android:layout_centerVertical="true"
-        android:scaleType="fitXY"
-        android:adjustViewBounds="false"
-        app:srcCompat="@drawable/fourth_floor" />
+        android:layout_marginLeft="27dp"
+        android:layout_marginStart="27dp"
+        android:text="Steps: " />
+
 </RelativeLayout>

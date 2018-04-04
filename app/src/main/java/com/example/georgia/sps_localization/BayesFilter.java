@@ -212,6 +212,12 @@ public class BayesFilter extends AppCompatActivity {
                      });
                  }
              }
+             else{
+                 if(exitLoop && txt1.getText().equals("Cell Number: ")){
+                     txt1.setText("Cell Number: "+ String.valueOf(cellNumber));
+                     txt2.setText("Probability: " +String.format("%.2f",sum*1000));//Not sure about multiplication
+                 }
+             }
          }
      };
      Thread myThread= new Thread(r);
@@ -241,7 +247,7 @@ public class BayesFilter extends AppCompatActivity {
                 ResultingProb=myDb.PerformGauss(myDb.ReturnIndex(subRSSID),Double.parseDouble(RSSI));
                 for(i=1;i<=19;i++){
                     results.setProbability(ResultingProb[i-1]);
-                    myDb.addRow3(results,myDb.ReturnIndex(subRSSID));
+                    myDb.update3(results,myDb.ReturnIndex(subRSSID),i);
                 }
             }
             else{

@@ -36,7 +36,7 @@ public class MainActivity extends AppCompatActivity {
 
     /******************************Method that gets called when i click Particle button*********************/
     public void GoToParticle(View view){
-        Intent intent =new Intent(this,ParticleFilter.class);
+        Intent intent =new Intent(this,ParticleInfo.class);
         startActivity(intent);
     }
 }
