@@ -169,15 +169,15 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
                 direction=" " ;
 
                 if (azimuth >= 320 && azimuth <= 360)
-                    direction = "N";
-                if (azimuth >=0  && azimuth <= 40)
-                    direction = "N";
-                if (azimuth >= 230 && azimuth <=310)
-                    direction = "W";
-                if (azimuth >= 140 && azimuth <= 220)
-                    direction = "S";
-                if (azimuth >= 50 && azimuth <=130)
                     direction = "E";
+                if (azimuth >=0  && azimuth <= 40)
+                    direction = "E";
+                if (azimuth >= 230 && azimuth <=310)
+                    direction = "N";
+                if (azimuth >= 140 && azimuth <= 220)
+                    direction = "W";
+                if (azimuth >= 50 && azimuth <=130)
+                    direction = "S";
 
            //     Log.i(TAG,direction+ " "+String.valueOf(azimuth));
             }
