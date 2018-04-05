@@ -4,10 +4,23 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background=" #3399ff"
-    tools:context="com.example.georgia.sps_localization.ParticleFilter">
-
+    tools:context="com.example.georgia.sps_localization.ParticleFilterImplementation">
+    <!--android:background=" #3399ff"-->
     <ImageView
+        android:id="@+id/floorPlan"
+        android:layout_width="match_parent"
+        android:layout_height="480dp"
+        android:background="@android:color/white" />
+
+    <Button
+        android:id="@+id/move"
+        android:layout_width="80dp"
+        android:layout_height="40dp"
+        android:text="move"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent" />
+    <!--<ImageView
         android:id="@+id/FloorPlan"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -16,5 +29,6 @@
         android:layout_centerVertical="true"
         android:scaleType="fitXY"
         android:adjustViewBounds="false"
-        app:srcCompat="@drawable/fourth_floor" />
+        app:srcCompat="@drawable/fourth_floor" />-->
+
 </RelativeLayout>

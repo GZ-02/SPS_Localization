@@ -7,4 +7,10 @@
     <string name="possibility">Probability: </string>
     <string name="cell_number">Cell Number: </string>
     <string name="locate">Locate me</string>
+    <string name="startFloor">Starting floor</string>
+    <string name="startTrain">Start Training</string>
+    <string name="stopTrain">Stop Training</string>
+    <string name="goParticles">Start  Particle  Filters</string>
+    <string name="descr">Press the start training and walk along the corridor of the fourth
+        floor to train our step counter then press the stop button</string>
 </resources>

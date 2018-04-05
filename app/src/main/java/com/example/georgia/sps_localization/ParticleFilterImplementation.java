@@ -7,20 +7,14 @@ import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.drawable.ShapeDrawable;
 import android.graphics.drawable.shapes.RectShape;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Display;
 import android.view.View;
-import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -28,32 +22,10 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 
-public class ParticleFilter extends AppCompatActivity implements SensorEventListener,StepListener{
+public class ParticleFilterImplementation extends AppCompatActivity {
 
     /********************************************Declaring Variables***************************************************/
     public String TAG="com.example.georgia.sps_localization";
-    double distancePerStep;
-    private SensorManager mySensorManager;
-    private Sensor accelerometer,magnetometer;
-    private SensorEventListener myListener1;
-    private  int azimuth;
-    public int NumberOfSteps=0;
-    public String direction;
-    public int directionInt;
-    private float[] mLastAccelerometer = new float[3];
-    private float[] mLastMagnetometer = new float[3];
-    private boolean mLastAccelerometerSet = false;
-    private boolean mLastMagnetometerSet = false;
-    float[] rMat = new float[9];
-    float[] orientation = new float[3];
-    private StepDetector simpleStepDetector;
-    double distanceTraveled=0.0;
-    public boolean exitLoop=false;
-
-    //WIL REMOVE
-   // TextView txt_compass,txtSteps;
-    //ImageView compass_img;
-    public String result = "1";
     private int floor;
     private int screen_height;
     private int screen_width;
@@ -64,68 +36,20 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
     private int floorHeightInCm = 26000;
     private float normalizing_constant_width;
     private float normalizing_constant_height;
-    private int particleSize = 10;
-    private int particle_number = 5;
+    private int particleSize = 2;
+    private int particle_number = 500;
     List<ShapeDrawable> walls;
     List<ShapeDrawable> banned;
     List<ParticleClass> particles = new ArrayList<>();
     public static final String FLOOR = "floor";
     private Button move;
+
     /*****************************************Function that creates the Particle activity*********************************************/
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_particle_filter);
-
-        //Line to keep screen on permanently
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         Log.i(TAG,"Entered Particle filters");
-
-        //Get values from previous activity
-        Bundle choicesData = getIntent().getExtras();
-        floor=Integer.parseInt(choicesData.getString(FLOOR));
-        Log.i(TAG,floor+" "+String.valueOf(floor));
-
-        distancePerStep=choicesData.getDouble("distancePerStep");
-        Log.i(TAG,floor+" "+String.valueOf(distancePerStep));
-
-        //Assign values to the variables
-        mySensorManager=(SensorManager)getSystemService(SENSOR_SERVICE);
-        accelerometer = mySensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        magnetometer = mySensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
-        simpleStepDetector = new StepDetector();
-        simpleStepDetector.registerListener(this);
-
-        /*********************************WILL REMOVE, ADDED FOR TESTING PURPOSES****************************/
-        /*compass_img = (ImageView) findViewById(R.id.img_compass);
-        txt_compass = (TextView) findViewById(R.id.txt_azimuth);
-        txtSteps=(TextView) findViewById(R.id.steps);*/
-        /*************************************************************************************************/
-
-        //Register Listeners
-        StartListeners();
-
-        //Thread with which we start listeners for compass
-        Runnable r=new Runnable(){
-            @Override
-            public void run(){
-                Log.i(TAG,"Started thread");
-                long present=System.currentTimeMillis();
-                long future=present+60*60*1000;
-                long check=present+1000;
-                //Start loop that repeats itself every 10 seconds
-                while(System.currentTimeMillis()<future){
-                    if(System.currentTimeMillis()==check){
-                        check+=1000;
-                        collectDirectionData();
-                    }
-                    if(exitLoop){break;}
-                }
-                Log.i(TAG,"Exited Loop");
-            }
-        };
-        Thread myThread= new Thread(r);
-        myThread.start();
 
         Display display = getWindowManager().getDefaultDisplay();
         Point size = new Point();
@@ -135,7 +59,8 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
         normalizing_constant_width = screen_width/floorWidthInCm;
         normalizing_constant_height = screen_height/floorHeightInCm;
 
-
+        Bundle bundle = getIntent().getExtras();
+        floor = bundle.getInt(FLOOR);
         ImageView playground = (ImageView) findViewById(R.id.floorPlan);
         Bitmap blankBitmap = Bitmap.createBitmap(screen_width,screen_height, Bitmap.Config.ARGB_8888);
         canvas = new Canvas(blankBitmap);
@@ -161,7 +86,7 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
             }
             banned = getRestrictedAreas3(screen_width, screen_height);
             for(ShapeDrawable ban : banned) {
-                // ban.draw(canvas);
+               // ban.draw(canvas);
             }
         }
         for (int i=0;i<particle_number;i++) {
@@ -176,127 +101,12 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
             }
         });
 
-    }
 
-    @Override
-    public void onSensorChanged(SensorEvent event) {
-        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-            simpleStepDetector.updateAccel(event.timestamp, event.values[0], event.values[1], event.values[2]);
-        }
-    }
-
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int i) {
-        //NOTHING HAPPENS HERE
-    }
-
-    @Override
-    public void step(long timeNs) {
-        NumberOfSteps++;
-        //txtSteps.setText("Steps: "+NumberOfSteps);
-        distanceTraveled=NumberOfSteps*distancePerStep;
-       // txt_compass.setText(azimuth + "° " + direction);
-
-        Log.i(TAG,"Steps: "+String.valueOf(NumberOfSteps)+", Distance: "+String.valueOf(distanceTraveled)+" "+String.valueOf(azimuth)+", Direction: "+String.valueOf(direction));
-        if ( Integer.parseInt(result)==1) {
-            result = "0";
-            Log.i(TAG, "calling our update");
-            updateParticlePosition((int) 500, 90);
-        } else {
-            Log.i(TAG, "Wait for result to update");
-        }
+        //add particles
     }
 
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        StopListeners();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        StartListeners();
-    }
-
-    @Override
-    protected void onStop() {
-        StopListeners();
-        mySensorManager.unregisterListener(myListener1);
-        exitLoop=true;
-        mySensorManager=null;
-        super.onStop();
-    }
-
-    //Method that registers listeners needed for motion model
-    public void StartListeners(){
-        mySensorManager.registerListener(ParticleFilter.this, accelerometer, SensorManager.SENSOR_DELAY_FASTEST);
-    }
-
-    //Method that unregisters all listeners
-    public void StopListeners(){
-        mySensorManager.unregisterListener(ParticleFilter.this);
-    }
-
-    /**************************************************Method that creates listener**************************************/
-    public void collectDirectionData(){
-        myListener1=new SensorEventListener() {
-            @Override
-            public void onSensorChanged(SensorEvent event) {
-                if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-                    System.arraycopy(event.values, 0, mLastAccelerometer, 0, event.values.length);
-                    mLastAccelerometerSet = true;
-                }
-                else if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
-                    System.arraycopy(event.values, 0, mLastMagnetometer, 0, event.values.length);
-                    mLastMagnetometerSet = true;
-                }
-                if (mLastAccelerometerSet && mLastMagnetometerSet) {
-                    SensorManager.getRotationMatrix(rMat, null, mLastAccelerometer, mLastMagnetometer);
-                    SensorManager.getOrientation(rMat, orientation);
-                    azimuth = (int) (Math.toDegrees(SensorManager.getOrientation(rMat, orientation)[0]) + 360) % 360;
-                }
-                azimuth=Math.round(azimuth);
-//                compass_img.setRotation(-azimuth);
-                direction=" " ;
-
-                if (azimuth >= 320 && azimuth <= 360){
-                    directionInt=0;
-                    direction="E";
-                }
-                if (azimuth >=0  && azimuth <= 40){
-                    directionInt=0;
-                    direction="E";
-                }
-                if (azimuth >= 230 && azimuth <=310)
-                {
-                    directionInt=90;
-                    direction="N";
-                }
-                if (azimuth >= 140 && azimuth <= 220){
-                    directionInt=180;
-                    direction="W";
-                }
-                if (azimuth >= 50 && azimuth <=130){
-                    directionInt=270;
-                    direction="S";
-                }
-
-                //     Log.i(TAG,direction+ " "+String.valueOf(azimuth));
-            }
-
-            @Override
-            public void onAccuracyChanged(Sensor sensor, int i) {
-
-            }
-        };
-        mySensorManager.registerListener(myListener1,accelerometer,SensorManager.SENSOR_DELAY_UI);
-        mySensorManager.registerListener(myListener1,magnetometer,SensorManager.SENSOR_DELAY_UI);
-    }
-
-
-    private class redrawParticles extends AsyncTask<String, Void, String> {
+    public class redrawParticles extends AsyncTask<String, Void, String> {
         @Override
         protected String doInBackground(String... strings) {
             canvas.drawColor(Color.WHITE);
@@ -310,7 +120,7 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
             for(ParticleClass particle : particles){
                 redraw(particle);
             }
-            return "1";
+            return "tada!";
         }
 
         @Override
@@ -318,8 +128,7 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
         }
 
         @Override
-        protected void onPreExecute() {
-        }
+        protected void onPreExecute() {}
 
         @Override
         protected void onProgressUpdate(Void... values) {}
@@ -330,8 +139,6 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
     }
 
     public void updateParticlePosition(int distance, double direction) {
-        Toast.makeText(this,String.valueOf(NumberOfSteps)+"distance"+String.valueOf(distance)+"direction int"+String.valueOf(direction),Toast.LENGTH_SHORT).show();
-
         int newX = (int) Math.round(distance * Math.sin(Math.toRadians(direction)));
         int newY = (int) Math.round(distance * Math.cos(Math.toRadians(direction)));
 
@@ -360,7 +167,7 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
             }
         }
         try {
-            result = new ParticleFilter.redrawParticles().execute("").get();
+            String result = new redrawParticles().execute("").get();
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (ExecutionException e) {
@@ -492,7 +299,7 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
         //island office parts 1
         walls.add(functionDimensionsToWall(7500,0,6900,true));
         walls.add(functionDimensionsToWall(7500,1800,3300,true));
-        // walls.add(functionDimensionsToWall(7500,0,cell18DoorFromTop,false));
+       // walls.add(functionDimensionsToWall(7500,0,cell18DoorFromTop,false));
         walls.add(functionDimensionsToWall(7500,1800,6200,false));
 
         walls.add(functionDimensionsToWall(10800,0,4400,false));
@@ -673,6 +480,4 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
         Rect holder = new Rect(restricted.getBounds());
         return holder.intersect(particle.left-particleSize,particle.top-particleSize,particle.right+particleSize,particle.bottom+particleSize);
     }
-
-
 }

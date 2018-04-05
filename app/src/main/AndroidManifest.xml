@@ -21,8 +21,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".BayesFilter" android:screenOrientation="landscape"/>
-        <activity android:name=".ParticleFilter" android:screenOrientation="landscape"/>
+        <activity
+            android:name=".BayesFilter"
+            android:screenOrientation="landscape" />
+        <activity
+            android:name=".ParticleFilter"
+            android:screenOrientation="portrait" />
+        <activity android:name=".ParticleInfo"
+            android:screenOrientation="landscape"/>
+        <activity android:name=".ParticleFilterImplementation" android:screenOrientation="portrait"/>
+
     </application>
 
 </manifest>
