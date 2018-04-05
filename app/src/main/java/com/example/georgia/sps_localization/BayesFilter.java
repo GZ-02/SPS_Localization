@@ -292,9 +292,9 @@ public class BayesFilter extends AppCompatActivity {
                 Log.i(TAG,"No match");
             }
         }
-        for(i=1;i<=43;i++) {
+    /*    for(i=1;i<=43;i++) {
             Log.i(TAG," ProbabilityPerAP"+String.valueOf(i) + " " + myDb.DatabaseToString3(i));
-        }
+        }*/
         if(accessed){
             //Calculate Average of all Probabilities gathered
             for(i=1;i<=19;i++){
@@ -363,5 +363,4 @@ public class BayesFilter extends AppCompatActivity {
             }
         }
     }
-
 }

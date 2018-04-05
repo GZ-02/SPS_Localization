@@ -20,7 +20,6 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -195,11 +194,9 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
     @Override
     public void step(long timeNs) {
         NumberOfSteps++;
-        //txtSteps.setText("Steps: "+NumberOfSteps);
         distanceTraveled = NumberOfSteps * distancePerStep;
-        // txt_compass.setText(azimuth + "° " + direction);
-
         Log.i(TAG, "Steps: " + String.valueOf(NumberOfSteps) + ", Distance: " + String.valueOf(distanceTraveled) + " " + String.valueOf(azimuth) + ", Direction: " + String.valueOf(direction));
+
         if (Integer.parseInt(result) == 1) {
             result = "0";
             Log.i(TAG, "calling our update");
