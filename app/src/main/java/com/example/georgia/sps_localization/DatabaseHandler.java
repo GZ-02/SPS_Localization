@@ -8,17 +8,19 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
+/*******************************************************Class that handles the Database **************************************************************/
+
 public class DatabaseHandler extends SQLiteOpenHelper {
 
+    //Initialize variables
     private static final int DATABASE_VERSION=1;
     private static final String DATABASE_NAME="LocalizationApp.db";
-    public int i,j;
-
-
+    public int i;
     private static final String TABLE_NAME="Prior";
     private String TABLE_NAME2="FunctionForAP";
     private String TABLE_NAME3="ProbabilityPerAccessPoint";
     private String TABLE_NAME4="OurAccessPoints";
+
     //Columns for the table Prior and ProbabilityPerAccessPoint
     private static final String COLUMN_ID="_id";
     private static final String COLUMN_PROBABILITY="probability";
@@ -75,10 +77,11 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     }
 
     @Override
-    //Upgrade the table
+    //Upgrade the tables
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         int ind;
         db.execSQL("DROP TABLE IF EXISTS "+ TABLE_NAME );
+        db.execSQL("DROP TABLE IF EXISTS" +TABLE_NAME4);
         for(ind=1;ind<=43;ind++) {
             db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME2+String.valueOf(i));
             db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME+String.valueOf(i));
@@ -108,7 +111,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     }
 
 
-    //Method that updates a specific row from one of the ProbAPTables
+    //Method that updates a specific row of table Prior
     public void update1(int index,String newPr){
         SQLiteDatabase db=this.getWritableDatabase();
         // Use ContentValues to add a row in the table
@@ -126,7 +129,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     }
 
 
-    //Method that returns the probability for specific cell and access point
+    //Method that returns the prior probability for specific cell
     public String returnPriorProb(int r){
         String probability="-1";
         SQLiteDatabase db = getReadableDatabase();
@@ -145,7 +148,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     }
 
 
-    //Add a new row to the tables CellFunction
+    //Add a new row to one of the tables CellFunction
     public void addRow2(CellFunctionTable cft,int i){
         TABLE_NAME2+=Integer.toString(i);
         Log.i(TAG,TABLE_NAME2);
@@ -281,6 +284,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     }
 
 
+    //Method that prints the contents of Prior table
     public String DatabaseToString1(){
         int sa;
         String dbString="";
@@ -309,6 +313,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         return dbString;
     }
 
+    //Method that prints the contents of one of the CellFunction tables
     public String DatabaseToString2(int index){
         int sa;
         String dbString="";
@@ -346,6 +351,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     }
 
 
+    //Method that prints the contents of one of the ProbAP tables
     public String DatabaseToString3(int index){
         int sa;
         String dbString="";
@@ -378,6 +384,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         return dbString;
     }
 
+    //Method that prints the contents of ApList table
     public String DatabaseToString4(){
         int sa;
         String dbString="";
@@ -408,6 +415,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     }
 
 
+    //Method that returns the index assigned to a specific access point
     public int ReturnIndex(String mac){
         int number=0,sa;
         String dbString="";
@@ -437,7 +445,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     }
 
 
-    //Function used to perform Gauss
+    //Function used to perform Gaussian equation for APs read
     public String[] PerformGauss(int index,double x){
         String[] results=new String[19];
         int sa;
@@ -476,6 +484,5 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         TABLE_NAME2="FunctionForAP";
         return results;
     }
-
 
 }

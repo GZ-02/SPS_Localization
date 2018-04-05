@@ -15,6 +15,7 @@ import android.widget.Toast;
 
 public class ParticleInfo extends AppCompatActivity implements SensorEventListener,StepListener{
 
+    //Initialize variables
     public int NumOfSteps;
     private SensorManager sensorManager;
     private Sensor accelerometer;
@@ -39,7 +40,7 @@ public class ParticleInfo extends AppCompatActivity implements SensorEventListen
         simpleStepDetector.registerListener(this);
     }
 
-
+    // Method that gets called when accelerometer event happened
     @Override
     public void onSensorChanged(SensorEvent event) {
         if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
@@ -53,6 +54,7 @@ public class ParticleInfo extends AppCompatActivity implements SensorEventListen
             //Nothing happens here
     }
 
+    // Increase step counter when step event detected
     @Override
     public void step(long timeNs) {
         NumOfSteps++;
@@ -97,5 +99,4 @@ public class ParticleInfo extends AppCompatActivity implements SensorEventListen
             finish();
         }
     }
-
 }

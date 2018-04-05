@@ -109,12 +109,14 @@ public class BayesFilter extends AppCompatActivity {
             }
         }
 
-        Log.i(TAG,"Print prior table."+"\n" + myDb.DatabaseToString1());
+      //  Log.i(TAG,"Print prior table."+"\n" + myDb.DatabaseToString1());
 
-        for(i=1;i<=43;i++) {
+    /*    for(i=1;i<=43;i++) {
             Log.i(TAG,"FunctionForAP"+ String.valueOf(i)+" " +myDb.DatabaseToString2(i));
+            Log.i(TAG,"ProbabilityPerAP"+ String.valueOf(i) +myDb.DatabaseToString3(i));
         }
         Log.i(TAG,"AccessPoints List:"+ myDb.DatabaseToString4());
+     */
     }
 
 
@@ -176,56 +178,92 @@ public class BayesFilter extends AppCompatActivity {
     }
 
 
- /*************************************Functions that gets called when button Initial Belief is pushed**************************************/
- public void LocateMe(View view){
-     Log.i(TAG,"Button clicked");
-     Runnable r=new Runnable(){
-         @Override
-         public void run(){
-             long present=System.currentTimeMillis();
-             long future=present+3*60*1000;
-             long check=present+10000;
-             //Start loop that repeats itself every 10 seconds
-             while(System.currentTimeMillis()<future){
-                 if(System.currentTimeMillis()==check){
-                     check+=10000;
-                     Log.i(TAG,"10 seconds passed");
-                     ScanForAP();
-                 }
-                 if(exitLoop){break;}
-             }
-             Log.i(TAG,"Exited Loop");
-             if(!accessed){
-                 try {
-                     runOnUiThread(new Runnable() {
-                         public void run() {
-                             Toast.makeText(getBaseContext(),"You might be in the wrong building",Toast.LENGTH_LONG).show();
-                         }
-                     });
-                 }
-                 catch (Throwable t)
-                 {
-                     runOnUiThread(new Runnable() {
-                         public void run() {
-                             Toast.makeText(getBaseContext(),"URL exeption!",Toast.LENGTH_SHORT).show();
-                         }
-                     });
-                 }
-             }
-             else{
-                 if(exitLoop && txt1.getText().equals("Cell Number: ")){
-                     txt1.setText("Cell Number: "+ String.valueOf(cellNumber));
-                     txt2.setText("Probability: " +String.format("%.2f",sum*1000));//Not sure about multiplication
-                 }
-             }
-         }
-     };
-     Thread myThread= new Thread(r);
-     myThread.start();
 
- }
+    /*************************************Function that gets called when button Locate Me is pushed**************************************/
+    public void LocateMe(View view){
+        Log.i(TAG,"Button clicked");
+        cellNumber=0;
+        maxValue=0.0;
+        sum=0.0;
+        Runnable r=new Runnable(){
+            @Override
+            public void run(){
+                long present=System.currentTimeMillis();
+                long future=present+3*60*1000;
+                long check=present+25000;
+                //Start loop that repeats itself every 10 seconds
+                while(System.currentTimeMillis()<future){
+                    if(System.currentTimeMillis()==check){
+                        check+=25000;
+                        Log.i(TAG,"25 seconds passed");
+                        ScanForAP();
+                    }
+                    if(exitLoop){break;}
+                }
+                Log.i(TAG,"Exited Loop");
+                if(!accessed){
+                    try {
+                        runOnUiThread(new Runnable() {
+                            public void run() {
+                                txt1.post(new Runnable() {
+                                    public void run() {
+                                        txt1.setText("Cell Number: Unkown");
+                                    }
+                                });
+                                txt2.post(new Runnable() {
+                                    public void run() {
+                                        txt2.setText("Probability: X");
+                                    }
+                                });
+                                Toast.makeText(getBaseContext(),"You might be in the wrong building",Toast.LENGTH_LONG).show();
+                            }
+                        });
+                    }
+                    catch (Throwable t)
+                    {
+                        runOnUiThread(new Runnable() {
+                            public void run() {
+                                Toast.makeText(getBaseContext(),"URL exeption!",Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    }
+                }
+                else{
+                    if(!exitLoop){
+                        try {
+                            runOnUiThread(new Runnable() {
+                                public void run() {
+                                    txt1.post(new Runnable() {
+                                        public void run() {
+                                            txt1.setText("Cell Number: "+String.valueOf(cellNumber));
+                                        }
+                                    });
+                                    txt2.post(new Runnable() {
+                                        public void run() {
+                                            txt2.setText("Probability:"+ String.valueOf(maxValue));
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                        catch (Throwable t)
+                        {
+                            runOnUiThread(new Runnable() {
+                                public void run() {
+                                    Toast.makeText(getBaseContext(),"URL exeption!",Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        }
+                    }
+                }
+            }
+        };
+        Thread myThread= new Thread(r);
+        myThread.start();
 
-    public void ScanForAP(){
+    }
+
+    public void ScanForAP() {
         // Set wifi manager.
         wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         // Start a wifi scan.
@@ -266,6 +304,10 @@ public class BayesFilter extends AppCompatActivity {
                         counter++;
                     }
                     FinalPosterior[i-1]+=pr;
+                    /**************************************Added yesterday********************************/
+                    results.setProbability("0");
+                    myDb.update3(results,j,i);
+                    /***********************************************************************************/
                 }
                 FinalPosterior[i-1]=FinalPosterior[i-1]/counter;
                 sum+=FinalPosterior[i-1];
@@ -284,8 +326,30 @@ public class BayesFilter extends AppCompatActivity {
             Log.i(TAG,str1+" "+str2+" "+String.valueOf(p));
             if(str1.equals(str2)){
                 exitLoop=true;
-                txt1.setText("Cell Number: "+ String.valueOf(cellNumber));
-                txt2.setText("Probability: " +String.format("%.2f",sum*1000));//Not sure about multiplication
+                try {
+                    runOnUiThread(new Runnable() {
+                        public void run() {
+                            txt1.post(new Runnable() {
+                                public void run() {
+                                    txt1.setText("Cell Number: "+String.valueOf(cellNumber));
+                                }
+                            });
+                            txt2.post(new Runnable() {
+                                public void run() {
+                                    txt2.setText("Probability:"+ String.valueOf(maxValue));
+                                }
+                            });
+                        }
+                    });
+                }
+                catch (Throwable t)
+                {
+                    runOnUiThread(new Runnable() {
+                        public void run() {
+                            Toast.makeText(getBaseContext(),"URL exeption!",Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
             }
             for(i=1;i<=19;i++){
                 if(FinalPosterior[i-1]==0){
@@ -294,11 +358,10 @@ public class BayesFilter extends AppCompatActivity {
                 else{
                     myDb.update1(i,String.valueOf(FinalPosterior[i-1]/sum));
                 }
+                /************************************Added yesterday************************/
+                FinalPosterior[i-1]=0;
             }
         }
     }
-
-
-
 
 }

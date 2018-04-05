@@ -27,14 +27,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    /******************************Method that gets called when i click Bayes button*********************/
+    /******************************Method that gets called when we click Bayes button*********************/
     public void GoToBayes(View view){
         Intent intent =new Intent(this,BayesFilter.class);
         startActivity(intent);
     }
 
 
-    /******************************Method that gets called when i click Particle button*********************/
+    /******************************Method that gets called when we click Particle button*********************/
     public void GoToParticle(View view){
         Intent intent =new Intent(this,ParticleInfo.class);
         startActivity(intent);
