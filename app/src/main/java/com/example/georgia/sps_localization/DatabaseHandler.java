@@ -197,7 +197,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     //Method that updates a specific row from one of the ProbAPTables
     public void update3(ProbAPTable pt,int index,int r){
         TABLE_NAME3+=Integer.toString(index);
-        Log.i(TAG,TABLE_NAME3);
+     //   Log.i(TAG,TABLE_NAME3);
         SQLiteDatabase db=this.getWritableDatabase();
         // Use ContentValues to add a row in the table
         ContentValues values = new ContentValues();
@@ -205,7 +205,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         values.put(COLUMN_PROBABILITY,pt.getProbability());
         long g=db.update(TABLE_NAME3,values,"_id="+String.valueOf(r),null);
         if(g!=-1){
-            Log.i(TAG,"Row updated");
+          //  Log.i(TAG,"Row updated");
         }
         else{
             Log.i(TAG,"Row not updated");

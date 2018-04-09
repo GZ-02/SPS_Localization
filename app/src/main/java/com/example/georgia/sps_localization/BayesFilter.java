@@ -178,24 +178,35 @@ public class BayesFilter extends AppCompatActivity {
     }
 
 
-
     /*************************************Function that gets called when button Locate Me is pushed**************************************/
     public void LocateMe(View view){
         Log.i(TAG,"Button clicked");
-        cellNumber=0;
-        maxValue=0.0;
-        sum=0.0;
+
         Runnable r=new Runnable(){
             @Override
             public void run(){
                 long present=System.currentTimeMillis();
                 long future=present+3*60*1000;
-                long check=present+25000;
+                long check=present+5000;
                 //Start loop that repeats itself every 10 seconds
                 while(System.currentTimeMillis()<future){
                     if(System.currentTimeMillis()==check){
                         check+=25000;
                         Log.i(TAG,"25 seconds passed");
+
+                        //Toast message
+                        try {
+                            runOnUiThread(new Runnable() {
+                                public void run() {
+                                    Toast.makeText(getBaseContext(),"Scanning",Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        }
+                        catch (Throwable t)
+                        {
+                            Log.i(TAG,"nothing");
+                        }
+
                         ScanForAP();
                     }
                     if(exitLoop){break;}
@@ -264,6 +275,11 @@ public class BayesFilter extends AppCompatActivity {
     }
 
     public void ScanForAP() {
+        /**************************************Not sure where to put these 2*****************************************/
+        maxValue=0.0;
+        sum=0.0;
+        /**********************************************************************************************************/
+
         // Set wifi manager.
         wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         // Start a wifi scan.
