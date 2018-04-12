@@ -15,6 +15,8 @@ import android.widget.Toast;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class BayesFilter extends AppCompatActivity {
@@ -41,8 +43,10 @@ public class BayesFilter extends AppCompatActivity {
     ProbAPTable results;
     double[] FinalPosterior={0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
     double maxValue=0.0,sum=0.0;
-    int cellNumber=0;
+    int cellNumber=0,maxValue2=0;
     boolean exitLoop=false,accessed=false;
+    public String Text_Low="Low";
+    public String Text_High="High";
 
     //String Table to save the 4 items found in each row of the file
     String[] words;
@@ -108,19 +112,10 @@ public class BayesFilter extends AppCompatActivity {
                 myDb.update1(index,String.valueOf(1.0/19.0));
             }
         }
-
-      //  Log.i(TAG,"Print prior table."+"\n" + myDb.DatabaseToString1());
-
-    /*    for(i=1;i<=43;i++) {
-            Log.i(TAG,"FunctionForAP"+ String.valueOf(i)+" " +myDb.DatabaseToString2(i));
-            Log.i(TAG,"ProbabilityPerAP"+ String.valueOf(i) +myDb.DatabaseToString3(i));
-        }
-        Log.i(TAG,"AccessPoints List:"+ myDb.DatabaseToString4());
-     */
     }
 
 
- /*************************************Function that reads Information File**************************************/
+ /************************************* Function that reads Information File **************************************/
     public void readFile(){
         //Declaring variables for function readFile()
         String data=" ";
@@ -181,19 +176,19 @@ public class BayesFilter extends AppCompatActivity {
     /*************************************Function that gets called when button Locate Me is pushed**************************************/
     public void LocateMe(View view){
         Log.i(TAG,"Button clicked");
-
+        txt1.setText("Cell Number:");
+        txt2.setText("Probability:");
+        // Update prior possibilities - Keeping the prior from previous cell did not work well
+        for (index=1;index<=19;index++) {
+            myDb.update1(index,String.valueOf(1.0/19.0));
+        }
         Runnable r=new Runnable(){
             @Override
             public void run(){
                 long present=System.currentTimeMillis();
-                long future=present+3*60*1000;
-                long check=present+5000;
+                long future=present+1*60*1000+30*1000;
                 //Start loop that repeats itself every 10 seconds
                 while(System.currentTimeMillis()<future){
-                    if(System.currentTimeMillis()==check){
-                        check+=25000;
-                        Log.i(TAG,"25 seconds passed");
-
                         //Toast message
                         try {
                             runOnUiThread(new Runnable() {
@@ -206,10 +201,8 @@ public class BayesFilter extends AppCompatActivity {
                         {
                             Log.i(TAG,"nothing");
                         }
-
                         ScanForAP();
-                    }
-                    if(exitLoop){break;}
+                        if(exitLoop){break;}
                 }
                 Log.i(TAG,"Exited Loop");
                 if(!accessed){
@@ -246,12 +239,12 @@ public class BayesFilter extends AppCompatActivity {
                                 public void run() {
                                     txt1.post(new Runnable() {
                                         public void run() {
-                                            txt1.setText("Cell Number: "+String.valueOf(cellNumber));
+                                            txt1.setText("Cell Numbers: "+String.valueOf(cellNumber)+", "+String.valueOf(maxValue2));
                                         }
                                     });
                                     txt2.post(new Runnable() {
                                         public void run() {
-                                            txt2.setText("Probability:"+ String.valueOf(maxValue));
+                                            txt2.setText("Probability:"+ String.valueOf(Text_Low));
                                         }
                                     });
                                 }
@@ -275,11 +268,9 @@ public class BayesFilter extends AppCompatActivity {
     }
 
     public void ScanForAP() {
-        /**************************************Not sure where to put these 2*****************************************/
         maxValue=0.0;
         sum=0.0;
-        /**********************************************************************************************************/
-
+        maxValue2=0;
         // Set wifi manager.
         wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         // Start a wifi scan.
@@ -287,15 +278,13 @@ public class BayesFilter extends AppCompatActivity {
         // Store results in a list.
         scanResults = wifiManager.getScanResults();
         // Write results to a label
-        Log.i(TAG,Integer.toString(scanResults.size()));
         for (ScanResult scanResult : scanResults) {
             RSSID=scanResult.BSSID;
             RSSI=Integer.toString(scanResult.level);
             subRSSID=RSSID.substring(0,RSSID.length()-3);
             //Perform gaussian formula
-            Log.i(TAG,subRSSID+" "+RSSI);
             if( (myDb.ReturnIndex(subRSSID)!=0) && !(subRSSID.equals(previousMac)) ){
-                Log.i(TAG,"Found matching access point");
+                //Log.i(TAG,"Found matching access point");
                 accessed=true;
                 previousMac=subRSSID;
                 ResultingProb=myDb.PerformGauss(myDb.ReturnIndex(subRSSID),Double.parseDouble(RSSI));
@@ -308,9 +297,6 @@ public class BayesFilter extends AppCompatActivity {
                 Log.i(TAG,"No match");
             }
         }
-    /*    for(i=1;i<=43;i++) {
-            Log.i(TAG," ProbabilityPerAP"+String.valueOf(i) + " " + myDb.DatabaseToString3(i));
-        }*/
         if(accessed){
             //Calculate Average of all Probabilities gathered
             for(i=1;i<=19;i++){
@@ -320,10 +306,8 @@ public class BayesFilter extends AppCompatActivity {
                         counter++;
                     }
                     FinalPosterior[i-1]+=pr;
-                    /**************************************Added yesterday********************************/
                     results.setProbability("0");
                     myDb.update3(results,j,i);
-                    /***********************************************************************************/
                 }
                 FinalPosterior[i-1]=FinalPosterior[i-1]/counter;
                 sum+=FinalPosterior[i-1];
@@ -332,7 +316,7 @@ public class BayesFilter extends AppCompatActivity {
                     cellNumber=i;
                 }
                 counter=0;
-                Log.i(TAG,"AvgProb = " + String.valueOf(FinalPosterior[i-1]));
+                //Log.i(TAG,"AvgProb = " + String.valueOf(FinalPosterior[i-1]));
             }
             Log.i(TAG,"Prob= "+String.valueOf(maxValue)+" Cell= "+String.valueOf(cellNumber)+" sum= "+String.valueOf(sum));
             double p=Double.parseDouble(myDb.returnPriorProb(cellNumber));
@@ -352,7 +336,7 @@ public class BayesFilter extends AppCompatActivity {
                             });
                             txt2.post(new Runnable() {
                                 public void run() {
-                                    txt2.setText("Probability:"+ String.valueOf(maxValue));
+                                    txt2.setText("Probability:"+ String.valueOf(Text_High));
                                 }
                             });
                         }
@@ -367,14 +351,21 @@ public class BayesFilter extends AppCompatActivity {
                     });
                 }
             }
+            FinalPosterior[cellNumber-1]=0;
             for(i=1;i<=19;i++){
                 if(FinalPosterior[i-1]==0){
-                    myDb.update1(i,String.valueOf(0.0000001));
+                    if (i-1!=cellNumber-1)
+                        myDb.update1(i,String.valueOf(0.0000001));
+                    else
+                        myDb.update1(i,String.valueOf(maxValue));
                 }
                 else{
                     myDb.update1(i,String.valueOf(FinalPosterior[i-1]/sum));
                 }
-                /************************************Added yesterday************************/
+                //Find second highest probable cell
+                if(maxValue2<FinalPosterior[i-1]){
+                    maxValue2=i;
+                }
                 FinalPosterior[i-1]=0;
             }
         }

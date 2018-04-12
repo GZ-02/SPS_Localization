@@ -16,11 +16,11 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Display;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -50,9 +50,6 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
     double distanceTraveled=0.0;
     public boolean exitLoop=false;
 
-    //WIL REMOVE
-    // TextView txt_compass,txtSteps;
-    //ImageView compass_img;
     public String result = "1";
     private int floor;
     private int screen_height;
@@ -208,7 +205,6 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
             direction = "E";
             Degrees=90;
             OldValue=90;
-
         }
         else{
             Degrees=OldValue;
@@ -220,7 +216,7 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
         count=0;
         sum=0;
 
-        if ( Integer.parseInt(result)==1) {
+        if (Integer.parseInt(result)==1) {
             result = "0";
             Log.i(TAG, "calling our update");
             updateParticlePosition((int) 500, 90);
@@ -234,6 +230,15 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
     protected void onPause() {
         super.onPause();
         StopListeners();
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            Log.i("booo","back button pressed");
+            StopListeners();
+        }
+        return super.onKeyDown(keyCode, event);
     }
 
     @Override
@@ -259,6 +264,7 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
     //Method that unregisters all listeners
     public void StopListeners(){
         mySensorManager.unregisterListener(ParticleFilter.this);
+        mySensorManager.unregisterListener(myListener1);
     }
 
     /**************************************************Method that creates listener**************************************/
@@ -328,7 +334,7 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
     }
 
     public void updateParticlePosition(int distance, double direction) {
-        Toast.makeText(this,String.valueOf(NumberOfSteps)+"distance"+String.valueOf(distance)+"direction int"+String.valueOf(direction),Toast.LENGTH_SHORT).show();
+        Toast.makeText(this,String.valueOf(NumberOfSteps)+" distance"+String.valueOf(distance)+"direction "+String.valueOf(direction),Toast.LENGTH_SHORT).show();
 
         int newX = (int) Math.round(distance * Math.sin(Math.toRadians(direction)));
         int newY = (int) Math.round(distance * Math.cos(Math.toRadians(direction)));

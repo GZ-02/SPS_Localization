@@ -47,7 +47,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         // Query for Prior table
         String query ="CREATE TABLE " + TABLE_NAME + "(" + COLUMN_ID +
                 " INTEGER PRIMARY KEY AUTOINCREMENT," + COLUMN_CELL + " TEXT_NULL," +COLUMN_PROBABILITY + " TEXT NULL" + ");";
-        Log.i(TAG,query);
+   //     Log.i(TAG,query);
         db.execSQL(query);
 
         //Query for  43 FunctionForAp and ProbabilityPerAccessPoint tables
@@ -55,15 +55,15 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         String q="CREATE TABLE " + TABLE_NAME2;
         String q1="CREATE TABLE " + TABLE_NAME3;
         for (i=1; i<=43; i++){
-            Log.i(TAG,Integer.toString(i));
+     //       Log.i(TAG,Integer.toString(i));
             query2=q + Integer.toString(i);
             query3=q1 + Integer.toString(i);
             query2=query2 +"("+ COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," + COLUMN_CELL + " TEXT NULL,"+
             COLUMN_MEAN + " TEXT NULL," + COLUMN_STANDARD + " TEXT NULL"+ ");";
             query3 =query3 + "(" + COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," + COLUMN_PROBABILITY + " TEXT NULL" + ");";
-            Log.i(TAG,query2);
+      //      Log.i(TAG,query2);
             db.execSQL(query2);
-            Log.i(TAG,query3);
+     //       Log.i(TAG,query3);
             db.execSQL(query3);
             query2="null";
             query3="null";
@@ -72,7 +72,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         //Query for table to save the access points
         query4 ="CREATE TABLE " + TABLE_NAME4 + "(" + COLUMN_ID +
                 " INTEGER PRIMARY KEY AUTOINCREMENT," + COLUMN_AP + " TEXT NULL" + ");";
-        Log.i(TAG,query4);
+   //     Log.i(TAG,query4);
         db.execSQL(query4);
     }
 
@@ -99,14 +99,14 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         //Add values for each column
         values.put(COLUMN_PROBABILITY,tbl.getProbability());
         long g=db.insert(TABLE_NAME, null, values);
-        Log.i(TAG,String.valueOf(g));
+    //    Log.i(TAG,String.valueOf(g));
 
-        if(g!=-1){
+  /*      if(g!=-1){
             Log.i(TAG,"Row added");
         }
         else{
             Log.i(TAG,"Row not added");
-        }
+        }*/
         db.close();
     }
 
@@ -119,12 +119,12 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         //Add values for each column
         values.put(COLUMN_PROBABILITY,newPr);
         long g=db.update(TABLE_NAME,values,"_id="+String.valueOf(index),null);
-        if(g!=-1){
+   /*     if(g!=-1){
             Log.i(TAG,"Row updated");
         }
         else{
             Log.i(TAG,"Row not updated");
-        }
+        }*/
         db.close();
     }
 
@@ -151,7 +151,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     //Add a new row to one of the tables CellFunction
     public void addRow2(CellFunctionTable cft,int i){
         TABLE_NAME2+=Integer.toString(i);
-        Log.i(TAG,TABLE_NAME2);
+    //    Log.i(TAG,TABLE_NAME2);
         SQLiteDatabase db=this.getWritableDatabase();
         // Use ContentValues to add a row in the table
         ContentValues values = new ContentValues();
@@ -161,14 +161,14 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         values.put(COLUMN_MEAN,cft.getMean());
         values.put(COLUMN_STANDARD,cft.getSd());
         long g=db.insert(TABLE_NAME2, null, values);
-        Log.i(TAG,String.valueOf(g));
-        if(g!=-1){
+ //       Log.i(TAG,String.valueOf(g));
+ /*       if(g!=-1){
             Log.i(TAG,"Row added");
         }
         else{
             Log.i(TAG,"Row not added");
             Log.i(TAG,"WHAT WAS NOT ADDED"+  cft.getCell_name()+ " "+cft.getMean() +" " +cft.getSd() );
-        }
+        }*/
         db.close();
         TABLE_NAME2="FunctionForAP";
     }
@@ -176,20 +176,20 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     //Add a new row to the tables ProbAPTable
     public void addRow3(ProbAPTable pt,int i){
         TABLE_NAME3+=Integer.toString(i);
-        Log.i(TAG,TABLE_NAME3);
+     //   Log.i(TAG,TABLE_NAME3);
         SQLiteDatabase db=this.getWritableDatabase();
         // Use ContentValues to add a row in the table
         ContentValues values = new ContentValues();
         //Add values for each column
         values.put(COLUMN_PROBABILITY,pt.getProbability());
         long g=db.insert(TABLE_NAME3, null, values);
-        Log.i(TAG,String.valueOf(g));
-        if(g!=-1){
+   //     Log.i(TAG,String.valueOf(g));
+      /*  if(g!=-1){
             Log.i(TAG,"Row added");
         }
         else{
             Log.i(TAG,"Row not added");
-        }
+        }*/
         db.close();
         TABLE_NAME3="ProbabilityPerAccessPoint";
     }
@@ -204,12 +204,12 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         //Add values for each column
         values.put(COLUMN_PROBABILITY,pt.getProbability());
         long g=db.update(TABLE_NAME3,values,"_id="+String.valueOf(r),null);
-        if(g!=-1){
+    /*    if(g!=-1){
           //  Log.i(TAG,"Row updated");
         }
         else{
             Log.i(TAG,"Row not updated");
-        }
+        }*/
         db.close();
         TABLE_NAME3="ProbabilityPerAccessPoint";
     }
@@ -242,14 +242,14 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         //Add values for each column
         values.put(COLUMN_AP,tbl.getAccessPoint());
         long g=db.insert(TABLE_NAME4, null, values);
-        Log.i(TAG,String.valueOf(g));
+   //     Log.i(TAG,String.valueOf(g));
 
-        if(g!=-1){
+ /*       if(g!=-1){
             Log.i(TAG,"Row added");
         }
         else{
             Log.i(TAG,"Row not added");
-        }
+        }*/
         db.close();
     }
 
@@ -296,7 +296,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 
         //Move to first row
         if(c.moveToFirst()){
-            Log.i(TAG,"There are records in the table");
+       //     Log.i(TAG,"There are records in the table");
         }
         else{
             dbString="No records in the table!";
@@ -326,7 +326,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 
         //Move to first row
         if(c.moveToFirst()){
-            Log.i(TAG,"There are records in the table");
+         //   Log.i(TAG,"There are records in the table");
         }
         else{
             dbString="No records in the table!";
@@ -364,7 +364,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 
         //Move to first row
         if(c.moveToFirst()){
-            Log.i(TAG,"There are records in the table");
+         //   Log.i(TAG,"There are records in the table");
         }
         else{
             dbString="No records in the table!";
@@ -396,7 +396,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 
         //Move to first row
         if(c.moveToFirst()){
-            Log.i(TAG,"There are records in the table");
+          //  Log.i(TAG,"There are records in the table");
         }
         else{
             dbString="No records in the table!";
@@ -427,7 +427,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 
         //Move to first row
         if(c.moveToFirst()){
-            Log.i(TAG,"There are records in the table");
+          //  Log.i(TAG,"There are records in the table");
         }
         else{
             Log.i(TAG,"No records in the table!");
@@ -460,7 +460,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 
         //Move to first row
         if(c.moveToFirst()){
-            Log.i(TAG,"There are records in the table");
+         //   Log.i(TAG,"There are records in the table");
         }
         else{
             Log.i(TAG,"No records in the table!");
