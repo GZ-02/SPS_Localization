@@ -315,7 +315,7 @@ public class BayesFilter extends AppCompatActivity {
                     cellNumber=i;
                 }
                 counter=0;
-                Log.i(TAG,"AvgProb = " + String.valueOf(FinalPosterior[i-1]));
+           //     Log.i(TAG,"AvgProb = " + String.valueOf(FinalPosterior[i-1]));
             }
             Log.i(TAG,"Prob= "+String.valueOf(maxValue)+" Cell= "+String.valueOf(cellNumber)+" sum= "+String.valueOf(sum));
             double p=Double.parseDouble(myDb.returnPriorProb(cellNumber));
