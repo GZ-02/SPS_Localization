@@ -43,7 +43,7 @@ public class BayesFilter extends AppCompatActivity {
     ProbAPTable results;
     double[] FinalPosterior={0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0};
     double maxValue=0.0,sum=0.0;
-    int cellNumber=0,maxValue2=0;
+    int cellNumber=0;
     boolean exitLoop=false,accessed=false;
     public String Text_Low="Low";
     public String Text_High="High";
@@ -239,7 +239,7 @@ public class BayesFilter extends AppCompatActivity {
                                 public void run() {
                                     txt1.post(new Runnable() {
                                         public void run() {
-                                            txt1.setText("Cell Numbers: "+String.valueOf(cellNumber)+", "+String.valueOf(maxValue2));
+                                            txt1.setText("Cell Numbers: "+String.valueOf(cellNumber));
                                         }
                                     });
                                     txt2.post(new Runnable() {
@@ -270,7 +270,6 @@ public class BayesFilter extends AppCompatActivity {
     public void ScanForAP() {
         maxValue=0.0;
         sum=0.0;
-        maxValue2=0;
         // Set wifi manager.
         wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         // Start a wifi scan.
@@ -316,7 +315,7 @@ public class BayesFilter extends AppCompatActivity {
                     cellNumber=i;
                 }
                 counter=0;
-                //Log.i(TAG,"AvgProb = " + String.valueOf(FinalPosterior[i-1]));
+                Log.i(TAG,"AvgProb = " + String.valueOf(FinalPosterior[i-1]));
             }
             Log.i(TAG,"Prob= "+String.valueOf(maxValue)+" Cell= "+String.valueOf(cellNumber)+" sum= "+String.valueOf(sum));
             double p=Double.parseDouble(myDb.returnPriorProb(cellNumber));
@@ -351,20 +350,12 @@ public class BayesFilter extends AppCompatActivity {
                     });
                 }
             }
-            FinalPosterior[cellNumber-1]=0;
             for(i=1;i<=19;i++){
                 if(FinalPosterior[i-1]==0){
-                    if (i-1!=cellNumber-1)
                         myDb.update1(i,String.valueOf(0.0000001));
-                    else
-                        myDb.update1(i,String.valueOf(maxValue));
                 }
                 else{
                     myDb.update1(i,String.valueOf(FinalPosterior[i-1]/sum));
-                }
-                //Find second highest probable cell
-                if(maxValue2<FinalPosterior[i-1]){
-                    maxValue2=i;
                 }
                 FinalPosterior[i-1]=0;
             }
