@@ -81,16 +81,16 @@ public class ParticleInfo extends AppCompatActivity implements SensorEventListen
         boolean check =true;
         floor=txt1.getText().toString();
 
-        /*if(distancePerStep==0.0){
+        if(distancePerStep==0.0){
             Toast.makeText(this,"The step counter was not trained.",Toast.LENGTH_LONG).show();
             check=false;
-        }*/
+        }
         if(!floor.equals("3") && !floor.equals("4")){
             Toast.makeText(this, "You did not give starting floor. Write either 3 or 4!", Toast.LENGTH_LONG).show();
             check=false;
         }
         distancePerStep = 150;
-        if(check || true){
+        if(check ){
             i.putExtra("distancePerStep", distancePerStep);
             i.putExtra("floor", floor);
             startActivity(i);

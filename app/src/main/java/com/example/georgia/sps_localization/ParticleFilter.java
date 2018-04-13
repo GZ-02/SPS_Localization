@@ -1,11 +1,13 @@
 package com.example.georgia.sps_localization;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.drawable.ShapeDrawable;
+import android.graphics.drawable.shapes.OvalShape;
 import android.graphics.drawable.shapes.RectShape;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -20,13 +22,21 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
 public class ParticleFilter extends AppCompatActivity implements SensorEventListener,StepListener{
+
+    private static final int K = 4;
+    private static final double THRESHOLD = 0.30;
+    private static final int DISTANCE_THRESHOLD = 500;
+    public static String heading="";
 
     /********************************************Declaring Variables***************************************************/
     public String TAG="com.example.georgia.sps_localization";
@@ -34,10 +44,10 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
     private SensorManager mySensorManager;
     private Sensor accelerometer,magnetometer;
     private SensorEventListener myListener1;
-    private  int azimuth;
+    private  int azimuth,Avgazimuth,sum=0,count=0,Degrees,OldValue;
     public int NumberOfSteps=0;
     public String direction;
-    public int directionInt;
+    public double directionInt;
     private float[] mLastAccelerometer = new float[3];
     private float[] mLastMagnetometer = new float[3];
     private boolean mLastAccelerometerSet = false;
@@ -47,11 +57,11 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
     private StepDetector simpleStepDetector;
     double distanceTraveled=0.0;
     public boolean exitLoop=false;
+    public int rounds=0;
 
     //WIL REMOVE
    // TextView txt_compass,txtSteps;
     //ImageView compass_img;
-    public String result = "1";
     private int floor;
     private int screen_height;
     private int screen_width;
@@ -60,16 +70,28 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
     //Assumption always landscape
     private int floorWidthInCm = 14400;
     private int floorHeightInCm = 26000;
-    private float normalizing_constant_width;
-    private float normalizing_constant_height;
-    private int particleSize = 10;
-    private int particle_number = 5;
+    private int particleSize = 5;
+    private int particle_number = 1000;
     List<ShapeDrawable> walls;
     List<ShapeDrawable> banned;
     List<ParticleClass> particles = new ArrayList<>();
     public static final String FLOOR = "floor";
     private Button move;
+    private TextView headingContainer;
+
     private ImageView playground;
+    List<Integer> mean_x =  new ArrayList<>(Collections.nCopies(K, 0));
+    List<Integer> mean_y = new ArrayList<>(Collections.nCopies(K, 0));
+    private Button up;
+    private Button locateMe;
+    private static int distance = 0;
+    private static Compass compass;
+    private boolean busy=false;
+    private long lastCalledTime = 0;
+    private ShapeDrawable me = new ShapeDrawable(new OvalShape());
+    private boolean converged = false;
+    private int randomParticles = 5;
+    private List<Integer> clusterCount = new ArrayList<>(Collections.nCopies(K, 0));
 
     /*****************************************Function that creates the Particle activity*********************************************/
     @Override
@@ -89,6 +111,8 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
         distancePerStep=choicesData.getDouble("distancePerStep");
         Log.i(TAG,floor+" "+String.valueOf(distancePerStep));
 
+        compass = new Compass(getApplicationContext(),mySensorManager);
+
         //Assign values to the variables
         mySensorManager=(SensorManager)getSystemService(SENSOR_SERVICE);
         accelerometer = mySensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -106,10 +130,10 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
         StartListeners();
 
         //Thread with which we start listeners for compass
-        Runnable r=new Runnable(){
+        /*Runnable r=new Runnable(){
             @Override
             public void run(){
-                Log.i(TAG,"Started thread");
+                *//*Log.i(TAG,"Started thread");
                 long present=System.currentTimeMillis();
                 long future=present+60*60*1000;
                 long check=present+1000;
@@ -121,11 +145,13 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
                     }
                     if(exitLoop){break;}
                 }
-                Log.i(TAG,"Exited Loop");
+                Log.i(TAG,"Exited Loop");*//*
+                collectDirectionData();
+
             }
         };
         Thread myThread= new Thread(r);
-        myThread.start();
+        myThread.start();*/
 
 
         Display display = getWindowManager().getDefaultDisplay();
@@ -140,25 +166,27 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
         playground.setImageBitmap(blankBitmap);
        // playground.performClick();
         move = (Button) findViewById(R.id.move);
-
+        up = (Button) findViewById(R.id.up);
+        locateMe = (Button) findViewById(R.id.locateMe);
+        headingContainer = (TextView) findViewById(R.id.heading);
 
 
         if(floor == 4) {
-            walls = getWallsForFloor4(screen_width, screen_height);
+            walls = getWallsForFloor4();
             for(ShapeDrawable wall : walls) {
                 wall.draw(canvas);
             }
-            banned = getRestrictedAreas4(screen_width, screen_height);
+            banned = getRestrictedAreas4();
             for(ShapeDrawable ban : banned) {
                 //ban.draw(canvas);
             }
         } else {
             // update to 3
-            walls = getWallsForFloor3(screen_width, screen_height);
+            walls = getWallsForFloor3();
             for(ShapeDrawable wall : walls) {
                 wall.draw(canvas);
             }
-            banned = getRestrictedAreas3(screen_width, screen_height);
+            banned = getRestrictedAreas3();
             for(ShapeDrawable ban : banned) {
                 // ban.draw(canvas);
             }
@@ -171,10 +199,138 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
             @Override
             public void onClick(View v) {
                 //refresh the information
-                updateParticlePosition(350,90);
+                synchronized (this) {
+                    updateParticlePosition(distance,directionInt);
+                    rounds++;
+                    updateClusterPoints();
+                    busy=false;
+                }
             }
         });
+        up.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(ParticleFilter.this,ParticleFilter.class);
+                i.putExtra("distancePerStep", distancePerStep);
+                if(floor==3) {
+                    floor=4;
+                } else {
+                    floor=3;
+                }
+                i.putExtra("floor", Integer.toString(floor));
+                finish();
+                startActivity(i);
+                //refresh the information
 
+            }
+        });
+        locateMe.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //refresh the information
+                showResults();
+            }
+
+        });
+        initializeKClusters(K);
+
+    }
+
+    private void initializeKClusters(int K) {
+        int loopIndex = 1;
+        while(loopIndex<=K) {
+            Random random = new Random();
+            int index = random.nextInt(particle_number-1);
+            if ( particles.get(index).clusterIndex == 0 ) {
+                particles.get(index).clusterIndex = loopIndex;
+                mean_x.set(loopIndex-1,particles.get(index).x);
+                mean_y.set(loopIndex-1,particles.get(index).y);
+                clusterCount.set(loopIndex-1,clusterCount.get(loopIndex-1)+1);
+                loopIndex++;
+            }
+        }
+        updateClusterPoints();
+    }
+
+    private void updateClusterPoints() {
+        List<Integer> temp_means_x = new ArrayList<Integer>(Collections.nCopies(K, 0));
+        Collections.copy(temp_means_x,mean_x);
+        List<Integer> temp_means_y = new ArrayList<Integer>(Collections.nCopies(K, 0));
+        Collections.copy(temp_means_y,mean_y);
+        for(int i=0;i<K;i++) {
+            clusterCount.set(i,0);
+        }
+        for ( ParticleClass  particle : particles) {
+            int distance = 26000;
+            int cluster_index = -1;
+            for (int index = 0;index<K;index++){
+                Rect rect = formRectangle(particle.x,particle.y,temp_means_x.get(index),temp_means_y.get(index));
+                /*if ( !(checkWalls(rect)) ) {
+                    */int temp_distance = calculateDistance(particle.x,particle.y,temp_means_x.get(index),temp_means_y.get(index));
+                    if (temp_distance<distance) {
+                        cluster_index = index+1;
+                        distance = temp_distance;
+                    }
+//                }
+            }
+            if (cluster_index!=-1) {
+                /*if ( particle.clusterIndex !=0) {
+                    clusterCount.set(particle.clusterIndex - 1, clusterCount.get(particle.clusterIndex - 1) - 1);
+                }*/
+                clusterCount.set(cluster_index - 1, clusterCount.get(cluster_index - 1) + 1);
+                particle.clusterIndex = cluster_index;
+                particle.distance = distance;
+                mean_x.set(cluster_index - 1, (mean_x.get(cluster_index - 1) + particle.x));
+                mean_y.set(cluster_index - 1, (mean_y.get(cluster_index - 1) + particle.y));
+            }
+        }
+        for (int i=0;i<K;i++) {
+            if (clusterCount.get(i)==0) {
+                mean_x.set(i,0);
+                mean_y.set(i,0);
+            } else {
+                mean_x.set(i,mean_x.get(i)/clusterCount.get(i));
+                mean_y.set(i,mean_y.get(i)/clusterCount.get(i));
+            }
+
+        }
+        if ( rounds >= 20) {
+            showResults();
+        }
+    }
+
+    private void showResults() {
+        int biggestCluster = getMaXCluster();
+        if (biggestCluster!=0){
+            me.getPaint().setColor(Color.YELLOW);
+            me.setBounds(mean_x.get(biggestCluster-1)-5*particleSize,mean_y.get(biggestCluster-1)-5*particleSize,mean_x.get(biggestCluster-1)+5*particleSize,mean_y.get(biggestCluster-1)+5*particleSize);
+            converged=true;
+            playground.performClick();
+        } else {
+            Toast.makeText(this,"not yet converged",Toast.LENGTH_SHORT);
+        }
+    }
+
+    private int getMaXCluster() {
+        List<Integer> list = new ArrayList<Integer>(Collections.nCopies(K, 0));
+        for (ParticleClass particle : particles) {
+            if ( particle.distance < DISTANCE_THRESHOLD && particle.clusterIndex !=0 ) {
+                list.set(particle.clusterIndex-1,list.get(particle.clusterIndex-1)+1);
+            }
+        }
+        int max = Collections.max(list);
+
+        if ( max >= THRESHOLD*particle_number) {
+            return list.indexOf(max)+1;
+        } else {
+            return 0;
+        }
+    }
+
+    private int calculateDistance(int x, int y, int mean_X, int mean_Y) {
+        double xcoord = Math.abs(x-mean_X);
+        double ycoord = Math.abs(y-mean_Y);
+        return (int)(Math.sqrt(xcoord*xcoord+ycoord*ycoord));
     }
 
     @Override
@@ -191,51 +347,32 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
 
     @Override
     public void step(long timeNs) {
-        NumberOfSteps++;
-        //txtSteps.setText("Steps: "+NumberOfSteps);
-        distanceTraveled=NumberOfSteps*distancePerStep;
-       // txt_compass.setText(azimuth + "° " + direction);
-
-        Log.i(TAG,"Steps: "+String.valueOf(NumberOfSteps)+", Distance: "+String.valueOf(distanceTraveled)+" "+String.valueOf(azimuth)+", Direction: "+String.valueOf(direction));
-        /*if ( Integer.parseInt(result)==1) {
-            result = "0";
-            Log.i(TAG, "calling our update");
-            updateParticlePosition((int) 500, 90);
-        } else {
-            Log.i(TAG, "Wait for result to update");
-        }*/
-        move.performClick();
-        /*try {
-            runOnUiThread(new Runnable() {
-                public void run() {
-                    canvas.drawColor(Color.WHITE);
-                    for(ShapeDrawable wall : walls) {
-                        wall.draw(canvas);
+        if ( System.currentTimeMillis()-lastCalledTime>500) {
+            lastCalledTime = System.currentTimeMillis();
+            if (!busy) {
+                synchronized (this) {
+                    busy = true;
+                    NumberOfSteps++;
+                    distanceTraveled = NumberOfSteps * distancePerStep;
+                    distance = (int) distancePerStep;
+                    if (heading.equals("up")) {
+                        directionInt = 180;
+                    } else if (heading.equals("down")) {
+                        directionInt = 0;
+                    } else if (heading.equals("left")) {
+                        directionInt = 270;
+                    } else if (heading.equals("right")) {
+                        directionInt = 90;
+                    } else {
+                        Toast.makeText(this, "ERROR in Heading: " + heading, Toast.LENGTH_SHORT).show();
+                        directionInt = 0;
                     }
-
-                    for(ShapeDrawable ban : banned) {
-                        ban.draw(canvas);
-                    }
-                    for(ParticleClass particle : particles){
-                        redraw(particle);
-                    }
-                    Toast.makeText(getBaseContext(),"You might be in the wrong building",Toast.LENGTH_LONG).show();
+                    headingContainer.setText(heading + " "+distance+" " + NumberOfSteps + " " + particles.size());
+                    move.performClick();
+                    busy = false;
                 }
-            });
+            }
         }
-        catch (Throwable t)
-        {
-            runOnUiThread(new Runnable() {
-                public void run() {
-                    Toast.makeText(getBaseContext(),"URL exeption!",Toast.LENGTH_SHORT).show();
-                }
-            });
-        }*/
-        /*synchronized (this) {
-            onPause();
-            move.performClick();
-            onResume();
-        }*/
     }
 
 
@@ -271,7 +408,7 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
     }
 
     /**************************************************Method that creates listener**************************************/
-    public void collectDirectionData(){
+    /*public void collectDirectionData(){
         myListener1=new SensorEventListener() {
             @Override
             public void onSensorChanged(SensorEvent event) {
@@ -289,32 +426,8 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
                     azimuth = (int) (Math.toDegrees(SensorManager.getOrientation(rMat, orientation)[0]) + 360) % 360;
                 }
                 azimuth=Math.round(azimuth);
-//                compass_img.setRotation(-azimuth);
-                direction=" " ;
-
-                if (azimuth >= 320 && azimuth <= 360){
-                    directionInt=0;
-                    direction="E";
-                }
-                if (azimuth >=0  && azimuth <= 40){
-                    directionInt=0;
-                    direction="E";
-                }
-                if (azimuth >= 230 && azimuth <=310)
-                {
-                    directionInt=90;
-                    direction="N";
-                }
-                if (azimuth >= 140 && azimuth <= 220){
-                    directionInt=180;
-                    direction="W";
-                }
-                if (azimuth >= 50 && azimuth <=130){
-                    directionInt=270;
-                    direction="S";
-                }
-
-                //     Log.i(TAG,direction+ " "+String.valueOf(azimuth));
+                sum+=azimuth;
+                count++;
             }
 
             @Override
@@ -340,7 +453,8 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
         for(ParticleClass particle : particles){
             redraw(particle);
         }
-    }
+    }*/
+
     public void drawSomething(View view) {
         canvas.drawColor(Color.WHITE);
         for(ShapeDrawable wall : walls) {
@@ -351,49 +465,13 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
             //ban.draw(canvas);
         }
         for(ParticleClass particle : particles){
-            redraw(particle);
+            particle.shape.draw(canvas);
+        }
+        if ( converged ) {
+            converged=false;
+            me.draw(canvas);
         }
         view.invalidate();
-    }
-
-    public class redrawParticles extends AsyncTask<Void, Void, Void> {
-
-        public redrawParticles(ImageView imageView) {
-            // Use a WeakReference to ensure the ImageView can be garbage collected
-//            Bitmap blankBitmap = Bitmap.createBitmap(screen_width,screen_height, Bitmap.Config.ARGB_8888);
-//            canvas = new Canvas(blankBitmap);
-//            playground.setImageBitmap(blankBitmap);
-        }
-
-
-
-
-        @Override
-        protected Void doInBackground(Void... voids) {
-            canvas.drawColor(Color.WHITE);
-            for(ShapeDrawable wall : walls) {
-                wall.draw(canvas);
-            }
-
-            for(ShapeDrawable ban : banned) {
-                //ban.draw(canvas);
-            }
-            for(ParticleClass particle : particles){
-                redraw(particle);
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPreExecute() {
-        }
-
-        @Override
-        protected void onProgressUpdate(Void... values) {}
-    }
-
-    private void redraw(ParticleClass particleClass) {
-        particleClass.shape.draw(canvas);
     }
 
     public void updateParticlePosition(int distance, double direction) {
@@ -405,15 +483,16 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
         newX = newX * screen_width / floorWidthInCm;
         newY = newY * screen_height / floorHeightInCm;
         int flag=0;
-        for (int index = 0; index < particle_number; index++) {
+        List<ParticleClass> invalidParticles = new ArrayList<>();
+
+        for (int index = 0; index < particles.size(); index++) {
             flag=0;
             ParticleClass particle = particles.get(index);
             Rect rect = formRectangle(particle.x,particle.y,particle.x+newX,particle.y+newY);
 
             for(ShapeDrawable wall : walls) {
                 if ( isCollision(wall,rect)) {
-                    particles.remove(index);
-                    particles.add(createNewParticle());
+                    invalidParticles.add(particle);
                     flag=1;
                     break;
                 }
@@ -425,30 +504,32 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
                 particle.shape.setBounds(particle.x - particleSize, particle.y - particleSize, particle.x + particleSize, particle.y + particleSize);
             }
         }
+        for ( int i=0;i<invalidParticles.size();i++) {
+            particles.remove(invalidParticles.get(i));
+        }
+        invalidParticles.clear();
+        int check = particles.size();
+        for (int i = 0;i<particle_number-check-randomParticles;i++) {
+            Random random = new Random();
+            int index = random.nextInt(check-1);
+            particles.add(cloneParticle(particles.get(index)));
+        }
+
+        for (int i = 0;i<randomParticles+1;i++) {
+            particles.add(createNewParticle());
+        }
         playground.performClick();
-        //redrawParticlesSynchronized();
+    }
 
-
+    public ParticleClass cloneParticle(ParticleClass particleClass) {
+        ParticleClass particle;
+        particle = particleClass.deepCopy(particleSize);
+        return  particle;
     }
 
 
-    public List getWallsForFloor4(int width, int height) {
+    public List getWallsForFloor4() {
         List walls = new ArrayList<>();
-        // distance between top right of cell 1 and door
-        // door width at cell 1
-
-        // distance from top right corner of cell 5 (staircase) to door
-        // door width at cell 5
-
-        // distance of wall between doors of cell 5 and cell 7
-
-        // door width at cell 7
-
-        // door width at cell 9
-
-        // distance between bottom left office's top horizontal wall and cell 9 door
-
-        // distance between top left corner of cell 16 and door
 
         walls.add(getBoundsForWall(0,0,14400,true));
         walls.add(getBoundsForWall(0,0,26000,false));
@@ -480,19 +561,19 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
         walls.add(getBoundsForWall(0,18300,5200,true));
         walls.add(getBoundsForWall(2100,18300,3400,false));
         walls.add(getBoundsForWall(0,21700,4000,true));
-        walls.add(getBoundsForWall(5500,21700,150,true));
+        walls.add(getBoundsForWall(5500,21700,4000,true));
         walls.add(getBoundsForWall(3600,21700,4300,false));
         walls.add(getBoundsForWall(5900,21700,4300,false));
         walls.add(getBoundsForWall(9400,19500,6500,false));
         walls.add(getBoundsForWall(9400,19500,5000,true));
 
-
         return walls;
 
     }
 
-    private ShapeDrawable getBoundsForWall(int leftD, int topD, int thickness, boolean isHorizontal){
-        ShapeDrawable wall = new ShapeDrawable(new RectShape());
+    /*private ShapeDrawable getBoundsForWall(int leftD, int topD, int thickness, boolean isHorizontal){
+
+        *//*ShapeDrawable wall = new ShapeDrawable(new RectShape());
 
         int horizontalT = (leftD/this.floorWidthInCm)*5;
         int verticalT = (topD/this.floorHeightInCm)*5;
@@ -506,13 +587,40 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
             bottom = (int)(((double)leftD/(double)this.floorWidthInCm) * (double)this.screen_width + 5);
         } else {
             right = (int) ((((double)topD+thickness)/(double)this.floorHeightInCm) * (double)this.screen_height);
-            bottom = (int) (((double)topD/(double)this.floorHeightInCm) * (double)this.screen_height + 5));
+            bottom = (int) (((double)topD/(double)this.floorHeightInCm) * (double)this.screen_height + 5);
         }
         wall.setBounds(left,top,right,bottom);
-        return wall;
+        return wall;*//*
+    }*/
+
+    private ShapeDrawable getBoundsForWall(int cmFromLeft, int cmFromTop, int sizeInCm, boolean isHorizontal){
+        ShapeDrawable d = new ShapeDrawable(new RectShape());
+
+        //correct cmFromLeft and cmFromTop for line thinkness
+        int cmFromLeftPixelWallThinknessCorrection = (cmFromLeft/this.floorWidthInCm)*10;
+        int cmFromTopPixelWallThinknessCorrection = (cmFromTop/this.floorHeightInCm)*10;
+
+        double partial = ((double)cmFromLeft/(double)this.floorWidthInCm);
+
+        int left = (int)(((double)cmFromLeft/(double)this.floorWidthInCm) * (double)this.screen_width - (double)cmFromLeftPixelWallThinknessCorrection);
+        int top = (int) (((double)cmFromTop/(double)this.floorHeightInCm) * (double)this.screen_height - (double)cmFromTopPixelWallThinknessCorrection);
+        int right = (int) ((isHorizontal) ? (((double)cmFromLeft+sizeInCm)/(double)this.floorWidthInCm) * (double)this.screen_width : (((double)cmFromLeft/(double)this.floorWidthInCm) * (double)this.screen_width + 10.0));
+        int bottom = (int)((!isHorizontal) ? (((double)cmFromTop+sizeInCm)/(double)this.floorHeightInCm) * (double)this.screen_height : (((double)cmFromTop/(double)this.floorHeightInCm) * (double)this.screen_height + 10.0));
+
+        // Log.d(TAG, "partial:" + partial);
+        //Log.d(TAG, "left:" + ((cmFromLeft/this.floorWidthInCm) * this.screenWidth));
+        // Log.d(TAG, "Pixel draw left:" + left + " top:" + (cmFromTop/this.floorHeightInCm) * this.screenHeight + "right: " + ((isHorizontal) ? ((cmFromLeft+sizeInCm)/this.floorWidthInCm) * this.screenWidth : ((cmFromLeft/this.floorWidthInCm) * this.screenWidth + 20)) + " bottom:"+ ((!isHorizontal) ? ((cmFromTop+sizeInCm)/this.floorHeightInCm) * this.screenHeight : ((cmFromTop/this.floorHeightInCm) * this.screenHeight + 10)));
+        d.setBounds(
+                left,
+                top,
+                right,
+                bottom);
+
+
+        return d;
     }
 
-    public List getWallsForFloor3(int width, int height) {
+    public List getWallsForFloor3() {
         List walls = new ArrayList<>();
         walls.add(getBoundsForWall(0,0,14400,true));
         walls.add(getBoundsForWall(0,0,26000,false));
@@ -558,7 +666,7 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
 
     }
 
-    public List getRestrictedAreas4(int width, int height){
+    public List getRestrictedAreas4(){
 
         List restricted_areas = new ArrayList<>();
 
@@ -578,7 +686,7 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
     }
 
 
-    public List getRestrictedAreas3(int width, int height){
+    public List getRestrictedAreas3(){
         List restricted_areas = new ArrayList<>();
 
         restricted_areas.add(getResrictedSection(0,0,5200,18200));
@@ -653,6 +761,24 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
         return false;
     }
 
+    public boolean checkWalls(Rect rect) {
+        for (ShapeDrawable wall : walls) {
+            if (isCollision(wall,rect)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean checkRestrictedAreas(Rect rect) {
+        for (ShapeDrawable restricted : banned) {
+            if (isCollision(restricted,rect)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public Rect formRectangle(int X, int Y,int newX,int newY) {
         int left = X<=newX?X:newX;
         int right = X>newX?X:newX;
@@ -678,8 +804,5 @@ public class ParticleFilter extends AppCompatActivity implements SensorEventList
         Rect holder = new Rect(restricted.getBounds());
         return holder.intersect(particle.left-particleSize,particle.top-particleSize,particle.right+particleSize,particle.bottom+particleSize);
     }
-
-
-
 
 }
